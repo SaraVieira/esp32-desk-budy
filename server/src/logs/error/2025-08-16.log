@@ -1,0 +1,12 @@
+2025-08-16 12:57:28 error: uncaughtException: listen EADDRINUSE: address already in use :::3000
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at Function.listen (/Users/sara/projects/desk-esp32-budy/server/node_modules/express/lib/application.js:635:24)
+    at App.listen (/Users/sara/projects/desk-esp32-budy/server/src/app.ts:33:14)
+    at Object.<anonymous> (/Users/sara/projects/desk-esp32-budy/server/src/server.ts:10:5)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Module.m._compile (/Users/sara/projects/desk-esp32-budy/server/node_modules/ts-node/src/index.ts:1618:23)
+    at node:internal/modules/cjs/loader:1706:10
+    at Object.require.extensions.<computed> [as .ts] (/Users/sara/projects/desk-esp32-budy/server/node_modules/ts-node/src/index.ts:1621:12)
