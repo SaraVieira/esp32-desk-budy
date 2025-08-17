@@ -26,6 +26,10 @@ static lv_style_t flexStyle;
 static lv_style_t flexRowStyle;
 static lv_obj_t* weather_col;
 static lv_obj_t* time_and_date_row;
+lv_obj_t* dateLabel;
+lv_obj_t* timeLabel;
+lv_obj_t* tempLabel;
+lv_obj_t* descLabel;
 
 #define SCREEN_WIDTH 240
 #define SCREEN_HEIGHT 320
@@ -37,6 +41,7 @@ String format_time(int time) {
   return (time < 10) ? "0" + String(time) : String(time);
 }
 
+
 void lv_create_global_styles() {
 
   lv_style_init(&flexStyle);
@@ -44,16 +49,16 @@ void lv_create_global_styles() {
 
   // time row
   time_and_date_row = lv_obj_create(lv_screen_active());
-  lv_obj_set_size(time_and_date_row, lv_pct(100), 75);
-  lv_obj_align(time_and_date_row, LV_ALIGN_TOP_MID, 0, 5);
+  lv_obj_set_size(time_and_date_row, lv_pct(100), lv_pct(20));
+  lv_obj_align(time_and_date_row, LV_ALIGN_TOP_MID, 0, 2);
   lv_obj_set_flex_flow(time_and_date_row, LV_FLEX_FLOW_ROW);
   lv_style_set_flex_main_place(&flexRowStyle, LV_FLEX_ALIGN_SPACE_BETWEEN);
 
 
   // weather col
   weather_col = lv_obj_create(lv_screen_active());
-  lv_obj_set_size(weather_col, lv_pct(100), 160);
-  lv_obj_align_to(weather_col, time_and_date_row, LV_ALIGN_OUT_BOTTOM_MID, 0, 5);
+  lv_obj_set_size(weather_col, lv_pct(100), lv_pct(75));
+  lv_obj_align_to(weather_col, time_and_date_row, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
   lv_obj_set_flex_flow(weather_col, LV_FLEX_FLOW_COLUMN);
 
 
@@ -61,7 +66,7 @@ void lv_create_global_styles() {
   lv_obj_set_style_bg_color(weather_col, lv_color_hex(0x000000), LV_PART_MAIN);
   lv_obj_set_style_bg_color(time_and_date_row, lv_color_hex(0x000000), LV_PART_MAIN);
   lv_style_set_border_width(&flexStyle, 0);
-   lv_style_set_border_width(&flexRowStyle, 0);
+  lv_style_set_border_width(&flexRowStyle, 0);
   lv_obj_add_style(weather_col, &flexStyle, 0);
   lv_obj_add_style(time_and_date_row, &flexRowStyle, 0);
 
@@ -75,46 +80,42 @@ void lv_create_main_gui(void) {
   lv_style_set_text_font(&labelsStyle, &lv_font_montserrat_30);
   static lv_style_t labelsStyleSmall;
   lv_style_init(&labelsStyleSmall);
-  lv_style_set_text_font(&labelsStyleSmall, &lv_font_montserrat_14);
-  const char* temp = temperature.c_str();
-  const char* desc = temperatureDescription.c_str();
-  const char* date = current_date.c_str();
-  String final_time_str = String(hour) + ":" + String(minute) + ":"  + String(second);
-  const char* time = final_time_str.c_str();
-  
+  lv_style_set_text_font(&labelsStyleSmall, &lv_font_montserrat_16);
+
+
 
   // date label
-  lv_obj_t* dateLabel = lv_label_create(time_and_date_row);
-  lv_label_set_text(dateLabel, date);
+  dateLabel = lv_label_create(time_and_date_row);
+
   lv_obj_set_style_text_color(time_and_date_row, lv_color_hex(0xffffff), LV_PART_MAIN);
   lv_obj_add_style(dateLabel, &labelsStyleSmall, 0);
   lv_obj_center(dateLabel);
 
   // time
-  lv_obj_t* timeLabel = lv_label_create(time_and_date_row);
-  lv_label_set_text(timeLabel, time);
+  timeLabel = lv_label_create(time_and_date_row);
+
   lv_obj_set_style_text_color(time_and_date_row, lv_color_hex(0xffffff), LV_PART_MAIN);
   lv_obj_add_style(timeLabel, &labelsStyleSmall, 0);
   lv_obj_center(timeLabel);
 
 
   // temperature label
-  lv_obj_t* tempLabel = lv_label_create(weather_col);
-  lv_label_set_text(tempLabel, temp);
+  tempLabel = lv_label_create(weather_col);
+
   lv_obj_set_style_text_color(weather_col, lv_color_hex(0xffffff), LV_PART_MAIN);
   lv_obj_add_style(tempLabel, &labelsStyle, 0);
   lv_obj_center(tempLabel);
 
 
   // weather description
-  lv_obj_t* descLabel = lv_label_create(weather_col);
-  lv_label_set_text(descLabel, desc);
+  descLabel = lv_label_create(weather_col);
+
   lv_obj_set_style_text_color(weather_col, lv_color_hex(0xffffff), LV_PART_MAIN);
   lv_obj_add_style(tempLabel, &labelsStyle, 0);
   lv_obj_center(descLabel);
 }
 
-void get_weather() {
+void get_info() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
     http.setConnectTimeout(50000000);
@@ -137,6 +138,15 @@ void get_weather() {
           hour = doc["current"]["hour"];
           minute = doc["current"]["minute"];
           second = doc["current"]["second"];
+          const char* temp = temperature.c_str();
+          const char* desc = temperatureDescription.c_str();
+          const char* date = current_date.c_str();
+          String final_time_str = String(hour) + ":" + String(minute) + ":" + String(second);
+          const char* time = final_time_str.c_str();
+          lv_label_set_text(dateLabel, date);
+          lv_label_set_text(timeLabel, time);
+          lv_label_set_text(tempLabel, temp);
+          lv_label_set_text(descLabel, desc);
 
         } else {
           Serial.print("deserializeJson() failed: ");
@@ -172,7 +182,6 @@ void setup() {
   // Initialize the TFT display using the TFT_eSPI library
   disp = lv_tft_espi_create(SCREEN_WIDTH, SCREEN_HEIGHT, draw_buf, sizeof(draw_buf));
   lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_270);
-  get_weather();
   // Function to draw the GUI
   lv_create_global_styles();
   lv_create_main_gui();
@@ -186,7 +195,7 @@ void loop() {
   unsigned long msec = millis();
   if (msec >= fetchTime) {
     fetchTime += 15 * 60 * 1000L;  // 15 minutes
-    get_weather();
+    get_info();
     Serial.println("Getting weather");
   }
   lv_task_handler();  // let the GUI do its work

@@ -9,8 +9,8 @@ export function getDateAndTime() {
       new Date().getUTCDate(),
       new Date().getUTCHours(),
       new Date().getUTCMinutes(),
-      new Date().getUTCSeconds()
-    )
+      new Date().getUTCSeconds(),
+    ),
   )
   return {
     date: format(UTCDate, "iii dd/MM/yyyy"),

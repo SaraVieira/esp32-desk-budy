@@ -1,4 +1,4 @@
-type MessageResponse = {
+export type MessageResponseIndex = {
   weather: {
     temperature: string
     description: string
@@ -6,19 +6,6 @@ type MessageResponse = {
     apparentTemperature: string
     rain: boolean
   }
-  events: {
-    id: string
-    title: string
-    description?: string
-    location?: string
-    start: string
-    end?: string
-    confirmed: boolean
-    startTime: string
-    endTime?: string
-    allDay: boolean
-    dates?: string[]
-  }[],
   current: {
     date: string
     time: string
@@ -31,4 +18,19 @@ type MessageResponse = {
     weekDayName: string
   }
 }
-export default MessageResponse
+
+export type MessageResponseEvents = {
+  events: {
+    id: string
+    title: string
+    description?: string
+    location?: string
+    start: string
+    end?: string
+    confirmed: boolean
+    startTime: string
+    endTime?: string
+    allDay: boolean
+    dates?: string[]
+  }[]
+}
