@@ -30,9 +30,23 @@ lv_obj_t* dateLabel;
 lv_obj_t* timeLabel;
 lv_obj_t* tempLabel;
 lv_obj_t* descLabel;
+lv_obj_t* iconLabel;
 
 #define SCREEN_WIDTH 240
 #define SCREEN_HEIGHT 320
+
+// ICONS
+#define ICON_CLOUDS "\xEF\x83\x82"
+#define ICON_TREND_DOWN "\xEE\x82\x97"
+#define ICON_TREND_UP "\xEE\x82\x98"
+#define ICON_SUN "\xEF\x86\x85"
+#define ICON_CLOUD_MOON "\xEF\x9B\x83"
+#define ICON_CLOUD_SUN "\xEF\x9B\x84"
+#define ICON_CLOUD_SUN_RAIN = "\xEF\x9D\x83"
+#define ICON_RAIN "\xEF\x9C\xBD"
+#define ICON_SHOWERS "\xEF\x9D\x80"
+
+
 
 #define DRAW_BUF_SIZE (SCREEN_WIDTH * SCREEN_HEIGHT / 10 * (LV_COLOR_DEPTH / 8))
 uint32_t draw_buf[DRAW_BUF_SIZE / 4];
@@ -42,19 +56,19 @@ String format_time(int time) {
 }
 
 
-static void timer_cb(lv_timer_t * timer){
+static void timer_cb(lv_timer_t* timer) {
   LV_UNUSED(timer);
   second++;
-  if(second > 59) {
+  if (second > 59) {
     second = 0;
     minute++;
-    if(minute > 59) {
+    if (minute > 59) {
       minute = 0;
       hour++;
       sync_time_date = true;
       Serial.println(sync_time_date);
       Serial.println("\n\n\n\n\n\n\n\n");
-      if(hour > 23) {
+      if (hour > 23) {
         hour = 0;
       }
     }
@@ -64,13 +78,13 @@ static void timer_cb(lv_timer_t * timer){
   String minute_time_f = format_time(minute);
   String second_time_f = format_time(second);
 
-  String final_time_str = String(hour_time_f) + ":" + String(minute_time_f) + ":"  + String(second_time_f);
+  String final_time_str = String(hour_time_f) + ":" + String(minute_time_f) + ":" + String(second_time_f);
   //Serial.println(final_time_str);
   lv_label_set_text(timeLabel, final_time_str.c_str());
   lv_label_set_text(dateLabel, current_date.c_str());
 }
 
-void lv_create_global_styles() { 
+void lv_create_global_styles() {
   lv_style_init(&flexStyle);
   lv_style_init(&flexRowStyle);
 
@@ -102,14 +116,22 @@ void lv_create_global_styles() {
 }
 
 void lv_create_main_gui(void) {
-  lv_timer_t * timer = lv_timer_create(timer_cb, 1000, NULL);
+  lv_timer_t* timer = lv_timer_create(timer_cb, 1000, NULL);
   lv_timer_ready(timer);
   LV_FONT_DECLARE(inter_22);
+  LV_FONT_DECLARE(font_awesome);
   LV_FONT_DECLARE(inter_16);
+
+  static lv_style_t iconStyles;
+  lv_style_init(&iconStyles);
+  lv_style_set_text_font(&iconStyles, &font_awesome);
+  lv_style_set_text_color(&iconStyles, lv_color_hex(0xFFFFFF));
+
   static lv_style_t labelsStyleBigPrimary;
   lv_style_init(&labelsStyleBigPrimary);
   lv_style_set_text_font(&labelsStyleBigPrimary, &inter_22);
   lv_style_set_text_color(&labelsStyleBigPrimary, lv_color_hex(0xFFFFFF));
+
   static lv_style_t labelsStyleSmallSecondary;
   lv_style_init(&labelsStyleSmallSecondary);
   lv_style_set_text_font(&labelsStyleSmallSecondary, &inter_16);
@@ -131,11 +153,16 @@ void lv_create_main_gui(void) {
   lv_obj_add_style(timeLabel, &labelTimeAndDate, 0);
   lv_obj_center(timeLabel);
 
+  // icon
+  iconLabel = lv_label_create(weather_col);
+  lv_obj_add_style(iconLabel, &iconStyles, 0);
+  lv_obj_center(iconLabel);
 
   // temperature label
   tempLabel = lv_label_create(weather_col);
   lv_obj_add_style(tempLabel, &labelsStyleBigPrimary, 0);
   lv_obj_center(tempLabel);
+
 
 
   // weather description
@@ -176,6 +203,21 @@ void get_info() {
           lv_label_set_text(timeLabel, time);
           lv_label_set_text(tempLabel, temp);
           lv_label_set_text(descLabel, desc);
+          switch (var) {
+            case 1:
+                printf("Case 1 is Matched.");
+                break;
+            case 2:
+                printf("Case 2 is Matched.");
+                break;
+            case 3:
+                printf("Case 3 is Matched.");
+                break;
+            default:
+                printf("Default case is Matched.");
+                break;
+            }
+          lv_label_set_text(iconLabel, ICON_CLOUDS);
 
         } else {
           Serial.print("deserializeJson() failed: ");
