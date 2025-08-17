@@ -1,15 +1,29 @@
 import { format } from "date-fns"
 
-export const getDateAndTime = () => {
+export function getDateAndTime() {
+  const offset = 1
+  const UTCDate = new Date(
+    Date.UTC(
+      new Date().getUTCFullYear(),
+      new Date().getUTCMonth(),
+      new Date().getUTCDate(),
+      new Date().getUTCHours(),
+      new Date().getUTCMinutes(),
+      new Date().getUTCSeconds()
+    )
+  )
   return {
-    date: format(new Date(), "yyyy-MM-dd"),
-    time: format(new Date(), "HH:mm:ss"),
-    hour: new Date().getHours(),
-    minute: new Date().getMinutes(),
-    second: new Date().getSeconds(),
+    date: format(UTCDate, "iii dd/MM/yyyy"),
+    time: format(UTCDate, "HH:mm:ss"),
+    hour: UTCDate.getUTCHours() + offset,
+    minute: UTCDate.getUTCMinutes(),
+    second: UTCDate.getUTCSeconds(),
     timezone: "Europe/London",
-    utcOffset: 1,
-    weekDay: new Date().getDay(),
-    weekDayName: new Date().toLocaleString("en-US", { weekday: "long" }),
+    utcOffset: offset,
+    weekDay: UTCDate.getUTCDay(),
+    weekDayName: UTCDate.toLocaleString("en-US", {
+      weekday: "long",
+      timeZone: "UTC",
+    }),
   }
 }
