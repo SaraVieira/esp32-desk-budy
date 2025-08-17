@@ -42,6 +42,34 @@ String format_time(int time) {
 }
 
 
+static void timer_cb(lv_timer_t * timer){
+  LV_UNUSED(timer);
+  second++;
+  if(second > 59) {
+    second = 0;
+    minute++;
+    if(minute > 59) {
+      minute = 0;
+      hour++;
+      sync_time_date = true;
+      Serial.println(sync_time_date);
+      Serial.println("\n\n\n\n\n\n\n\n");
+      if(hour > 23) {
+        hour = 0;
+      }
+    }
+  }
+
+  String hour_time_f = format_time(hour);
+  String minute_time_f = format_time(minute);
+  String second_time_f = format_time(second);
+
+  String final_time_str = String(hour_time_f) + ":" + String(minute_time_f) + ":"  + String(second_time_f);
+  //Serial.println(final_time_str);
+  lv_label_set_text(timeLabel, final_time_str.c_str());
+  lv_label_set_text(dateLabel, current_date.c_str());
+}
+
 void lv_create_global_styles() { 
   lv_style_init(&flexStyle);
   lv_style_init(&flexRowStyle);
@@ -74,6 +102,8 @@ void lv_create_global_styles() {
 }
 
 void lv_create_main_gui(void) {
+  lv_timer_t * timer = lv_timer_create(timer_cb, 1000, NULL);
+  lv_timer_ready(timer);
   LV_FONT_DECLARE(inter_22);
   LV_FONT_DECLARE(inter_16);
   static lv_style_t labelsStyleBigPrimary;
