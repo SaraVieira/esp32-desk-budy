@@ -17,6 +17,7 @@ async function getWeather() {
         isDay: data.current.is_day,
         apparentTemperature: data.current.apparent_temperature,
         rain: !!data.current.rain,
+        code: data.current.weather_code,
     };
 }
 //# sourceMappingURL=weather.js.map
