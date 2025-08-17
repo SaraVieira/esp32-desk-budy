@@ -5,6 +5,12 @@ export type MessageResponseIndex = {
     isDay: boolean
     apparentTemperature: string
     rain: boolean
+    tomorrow: {
+      temperatureMax: string
+      temperatureMin: string
+      code: number
+      description: string
+    }
   }
   current: {
     date: string

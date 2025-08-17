@@ -42,8 +42,7 @@ String format_time(int time) {
 }
 
 
-void lv_create_global_styles() {
-
+void lv_create_global_styles() { 
   lv_style_init(&flexStyle);
   lv_style_init(&flexRowStyle);
 
@@ -63,55 +62,55 @@ void lv_create_global_styles() {
 
 
   // styles for both
-  lv_obj_set_style_bg_color(weather_col, lv_color_hex(0x000000), LV_PART_MAIN);
-  lv_obj_set_style_bg_color(time_and_date_row, lv_color_hex(0x000000), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(weather_col, lv_color_hex(0x2E2E2E), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(time_and_date_row, lv_color_hex(0x2E2E2E), LV_PART_MAIN);
   lv_style_set_border_width(&flexStyle, 0);
   lv_style_set_border_width(&flexRowStyle, 0);
   lv_obj_add_style(weather_col, &flexStyle, 0);
   lv_obj_add_style(time_and_date_row, &flexRowStyle, 0);
 
   // global styles
-  lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x000000), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x2E2E2E), LV_PART_MAIN);
 }
 
 void lv_create_main_gui(void) {
-  static lv_style_t labelsStyle;
-  lv_style_init(&labelsStyle);
-  lv_style_set_text_font(&labelsStyle, &lv_font_montserrat_30);
-  static lv_style_t labelsStyleSmall;
-  lv_style_init(&labelsStyleSmall);
-  lv_style_set_text_font(&labelsStyleSmall, &lv_font_montserrat_16);
+  LV_FONT_DECLARE(inter_22);
+  LV_FONT_DECLARE(inter_16);
+  static lv_style_t labelsStyleBigPrimary;
+  lv_style_init(&labelsStyleBigPrimary);
+  lv_style_set_text_font(&labelsStyleBigPrimary, &inter_22);
+  lv_style_set_text_color(&labelsStyleBigPrimary, lv_color_hex(0xFFFFFF));
+  static lv_style_t labelsStyleSmallSecondary;
+  lv_style_init(&labelsStyleSmallSecondary);
+  lv_style_set_text_font(&labelsStyleSmallSecondary, &inter_16);
+  lv_style_set_text_color(&labelsStyleSmallSecondary, lv_color_hex(0x8B8B8B));
 
+  static lv_style_t labelTimeAndDate;
+  lv_style_init(&labelTimeAndDate);
+  lv_style_set_text_font(&labelTimeAndDate, &inter_16);
+  lv_style_set_text_color(&labelTimeAndDate, lv_color_hex(0xFFFFFF));
 
 
   // date label
   dateLabel = lv_label_create(time_and_date_row);
-
-  lv_obj_set_style_text_color(time_and_date_row, lv_color_hex(0xffffff), LV_PART_MAIN);
-  lv_obj_add_style(dateLabel, &labelsStyleSmall, 0);
+  lv_obj_add_style(dateLabel, &labelTimeAndDate, 0);
   lv_obj_center(dateLabel);
 
   // time
   timeLabel = lv_label_create(time_and_date_row);
-
-  lv_obj_set_style_text_color(time_and_date_row, lv_color_hex(0xffffff), LV_PART_MAIN);
-  lv_obj_add_style(timeLabel, &labelsStyleSmall, 0);
+  lv_obj_add_style(timeLabel, &labelTimeAndDate, 0);
   lv_obj_center(timeLabel);
 
 
   // temperature label
   tempLabel = lv_label_create(weather_col);
-
-  lv_obj_set_style_text_color(weather_col, lv_color_hex(0xffffff), LV_PART_MAIN);
-  lv_obj_add_style(tempLabel, &labelsStyle, 0);
+  lv_obj_add_style(tempLabel, &labelsStyleBigPrimary, 0);
   lv_obj_center(tempLabel);
 
 
   // weather description
   descLabel = lv_label_create(weather_col);
-
-  lv_obj_set_style_text_color(weather_col, lv_color_hex(0xffffff), LV_PART_MAIN);
-  lv_obj_add_style(tempLabel, &labelsStyle, 0);
+  lv_obj_add_style(descLabel, &labelsStyleSmallSecondary, 0);
   lv_obj_center(descLabel);
 }
 
