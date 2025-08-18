@@ -45,7 +45,8 @@ lv_obj_t* iconLabel;
 #define ICON_CLOUD_SUN_RAIN = "\xEF\x9D\x83"
 #define ICON_RAIN "\xEF\x9C\xBD"
 #define ICON_SHOWERS "\xEF\x9D\x80"
-
+#define ICON_SNOW "\xEF\x8B\x9C"
+#define ICON_THUNDER "\xEF\x9D\xAC"
 
 
 #define DRAW_BUF_SIZE (SCREEN_WIDTH * SCREEN_HEIGHT / 10 * (LV_COLOR_DEPTH / 8))
@@ -188,6 +189,7 @@ void get_info() {
         DeserializationError error = deserializeJson(doc, payload);
         // Parse the JSON
         if (!error) {
+          int32_t code;
           temperature = (const char*)doc["weather"]["temperature"];
           temperatureDescription = (const char*)doc["weather"]["description"];
           current_date = (const char*)doc["current"]["date"];
@@ -199,25 +201,33 @@ void get_info() {
           const char* date = current_date.c_str();
           String final_time_str = String(hour) + ":" + String(minute) + ":" + String(second);
           const char* time = final_time_str.c_str();
+          code = doc["weather"]["code"];
           lv_label_set_text(dateLabel, date);
           lv_label_set_text(timeLabel, time);
           lv_label_set_text(tempLabel, temp);
           lv_label_set_text(descLabel, desc);
-          switch (var) {
-            case 1:
-                printf("Case 1 is Matched.");
-                break;
-            case 2:
-                printf("Case 2 is Matched.");
-                break;
-            case 3:
-                printf("Case 3 is Matched.");
-                break;
-            default:
-                printf("Default case is Matched.");
-                break;
-            }
-          lv_label_set_text(iconLabel, ICON_CLOUDS);
+           Serial.println(code);
+          if (code == 0 || code == 1) {
+            lv_label_set_text(iconLabel, ICON_SUN);
+          }
+          if (code == 2) {
+            lv_label_set_text(iconLabel, ICON_CLOUD_SUN);
+          }
+          if (code == 3 || code == 45 || code == 48) { 
+            lv_label_set_text(iconLabel, ICON_CLOUDS);
+          }
+          if (code == 65 || code == 81 || code == 82) {
+            lv_label_set_text(iconLabel, ICON_SHOWERS);
+          }
+          if (code == 73 || code == 75 || code == 77 || code == 85 || code == 86) {
+            lv_label_set_text(iconLabel, ICON_SNOW);
+          }
+          if (code == 95 || code == 96 || code == 99) {
+            lv_label_set_text(iconLabel, ICON_THUNDER);
+          }
+          if (code == 51 || code == 53 || code == 55 || code == 56 || code == 57 || code == 61 || code == 63 || code == 66 || code == 67 || code == 80) {
+            lv_label_set_text(iconLabel, ICON_RAIN);
+          }
 
         } else {
           Serial.print("deserializeJson() failed: ");
