@@ -12,6 +12,7 @@ function getDaysArray(start, end) {
     }
     return arr;
 }
+// Calendar URLs
 const OUTLOOK = "https://outlook.office365.com/owa/calendar/f91efcaebd264b3ea3037db22dcb1797@epilot.cloud/7f0f9264bf1845bf89bea86b74aca63110921515895800548356/calendar.ics";
 const CALENDAR = "https://calendar.google.com/calendar/ical/hey%40iamsaravieira.com/public/basic.ics";
 const BENFICA_CALENDAR = "https://calendar.google.com/calendar/ical/spducgnrp5ph8lmsceg7c7f8p0%40group.calendar.google.com/public/basic.ics";
@@ -29,35 +30,35 @@ function commonParsing(event) {
 }
 function todayEvents(events) {
     return events
-        .filter(event => event.dates.some((date) => (0, isToday_1.isToday)(date)))
-        .map(event => ({
+        .filter((event) => event.dates.some((date) => (0, isToday_1.isToday)(date)))
+        .map((event) => ({
         ...(0, lodash_es_1.omit)(event, ["dates"]),
     }));
 }
 async function getOutlookEvents() {
-    const outlook = await fetch(OUTLOOK).then(rsp => rsp.text());
+    const outlook = await fetch(OUTLOOK).then((rsp) => rsp.text());
     const ical = node_ical_1.sync.parseICS(outlook);
-    const allEvents = Object.values(ical).filter(event => event.type === "VEVENT");
-    return todayEvents(allEvents.map(event => ({
+    const allEvents = Object.values(ical).filter((event) => event.type === "VEVENT");
+    return todayEvents(allEvents.map((event) => ({
         ...commonParsing(event),
         // @ts-expect-error exists on outlook
         allDay: event["MICROSOFT-CDO-ALLDAYEVENT"].toLowerCase() === "true",
     })));
 }
 async function getCalendarEvents() {
-    const calendar = await fetch(CALENDAR).then(rsp => rsp.text());
+    const calendar = await fetch(CALENDAR).then((rsp) => rsp.text());
     const ical = node_ical_1.sync.parseICS(calendar);
-    const allEvents = Object.values(ical).filter(event => event.type === "VEVENT");
-    return todayEvents(allEvents.map(event => ({
+    const allEvents = Object.values(ical).filter((event) => event.type === "VEVENT");
+    return todayEvents(allEvents.map((event) => ({
         ...commonParsing(event),
         allDay: (0, date_fns_1.differenceInDays)(event.end, event.start) > 1,
     })));
 }
 async function getBenficaEvents() {
-    const calendar = await fetch(BENFICA_CALENDAR).then(rsp => rsp.text());
+    const calendar = await fetch(BENFICA_CALENDAR).then((rsp) => rsp.text());
     const ical = node_ical_1.sync.parseICS(calendar);
-    const allEvents = Object.values(ical).filter(event => event.type === "VEVENT");
-    return todayEvents(allEvents.map(event => ({
+    const allEvents = Object.values(ical).filter((event) => event.type === "VEVENT");
+    return todayEvents(allEvents.map((event) => ({
         ...commonParsing(event),
         allDay: (0, date_fns_1.differenceInDays)(event.end, event.start) > 1,
     })));
@@ -66,10 +67,6 @@ async function getEvents() {
     const outlookEvents = await getOutlookEvents();
     const calendarEvents = await getCalendarEvents();
     const benficaEvents = await getBenficaEvents();
-    return [
-        ...calendarEvents,
-        ...outlookEvents,
-        ...benficaEvents,
-    ].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+    return [...calendarEvents, ...outlookEvents, ...benficaEvents].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 }
 //# sourceMappingURL=calendar.js.map
