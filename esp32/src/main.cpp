@@ -4,6 +4,7 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include "images/images.h"
+#include "styles/styles.h"
 
 // Replace with your network credentials
 const char *ssid = "honest salsas food and wine";
@@ -15,7 +16,6 @@ String temperature;
 String temperatureDescription;
 String current_date;
 
-static bool is_day;
 static int32_t hour;
 static int32_t minute;
 static int32_t second;
@@ -66,14 +66,6 @@ LV_FONT_DECLARE(teletext_40);
 static lv_obj_t *clock_screen;
 static lv_obj_t *weather_screen;
 
-static void clearPaddings(lv_obj_t *container)
-{
-  lv_obj_set_style_pad_left(container, 0, 0);
-  lv_obj_set_style_pad_right(container, 0, 0);
-  lv_obj_set_style_pad_top(container, 0, 0);
-  lv_obj_set_style_pad_bottom(container, 0, 0);
-}
-
 static void timer_cb(lv_timer_t *timer)
 {
   LV_UNUSED(timer);
@@ -103,7 +95,7 @@ static void timer_cb(lv_timer_t *timer)
 
 void lv_create_global_styles()
 {
-  clearPaddings(lv_scr_act());
+  clear_paddings(lv_scr_act());
 }
 
 void get_info()
@@ -187,8 +179,8 @@ void create_screen_clock()
   lv_obj_set_size(container, lv_pct(100), lv_pct(100));
   lv_obj_align(container, LV_ALIGN_CENTER, 0, 0);
   lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_flex_align(container, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  clearPaddings(container);
+  align_center_x_y(container);
+  clear_paddings(container);
   lv_obj_add_style(container, &no_border_style, 0);
   lv_obj_set_style_bg_color(container, black, LV_PART_MAIN);
 
@@ -197,8 +189,8 @@ void create_screen_clock()
   lv_obj_set_size(time_container, lv_pct(100), 80);
   lv_obj_set_flex_flow(time_container, LV_FLEX_FLOW_ROW);
 
-  lv_obj_set_flex_align(time_container, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  clearPaddings(time_container);
+  align_center_x_y(time_container);
+  clear_paddings(time_container);
   lv_obj_add_style(time_container, &no_border_style, 0);
   lv_obj_set_style_bg_color(time_container, black, LV_PART_MAIN);
 
@@ -223,8 +215,8 @@ void create_screen_clock()
   lv_obj_set_size(date_container, lv_pct(100), lv_pct(25));
   lv_obj_set_style_translate_y(date_container, -28, LV_PART_MAIN);
   lv_obj_set_flex_flow(date_container, LV_FLEX_FLOW_ROW);
-  lv_obj_set_flex_align(date_container, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  clearPaddings(date_container);
+  align_center_x_y(date_container);
+  clear_paddings(date_container);
   lv_obj_add_style(date_container, &no_border_style, 0);
   lv_obj_set_style_bg_color(date_container, blue, LV_PART_MAIN);
 
@@ -243,15 +235,15 @@ void create_weather_screen(void)
   lv_obj_set_size(weather_screen, lv_pct(100), lv_pct(100));
   lv_obj_align(weather_screen, LV_ALIGN_CENTER, 0, 0);
   lv_obj_set_flex_flow(weather_screen, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_flex_align(weather_screen, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  clearPaddings(weather_screen);
+  align_center_x_y(weather_screen);
+  clear_paddings(weather_screen);
   lv_obj_add_style(weather_screen, &no_border_style, 0);
   lv_obj_set_style_bg_color(weather_screen, black, LV_PART_MAIN);
 
   lv_obj_t *icon_and_temp = lv_obj_create(weather_screen);
   lv_obj_set_flex_flow(icon_and_temp, LV_FLEX_FLOW_ROW);
-  lv_obj_set_flex_align(icon_and_temp, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  clearPaddings(icon_and_temp);
+  align_center_x_y(icon_and_temp);
+  clear_paddings(icon_and_temp);
   lv_obj_set_size(icon_and_temp, lv_pct(100), 100);
   lv_obj_add_style(icon_and_temp, &no_border_style, 0);
   lv_obj_set_style_bg_color(icon_and_temp, black, LV_PART_MAIN);
@@ -281,14 +273,13 @@ void setup()
 
   // Create a display object
   lv_display_t *disp;
-  // Initialize the TFT display using the TFT_eSPI library
   disp = lv_tft_espi_create(SCREEN_WIDTH, SCREEN_HEIGHT, draw_buf, sizeof(draw_buf));
   lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_90);
-  // Function to draw the GUI
   lv_theme_t *theme = lv_theme_default_init(disp, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_RED), true, LV_FONT_DEFAULT);
   lv_disp_set_theme(disp, theme);
   lv_timer_t *timer = lv_timer_create(timer_cb, 1000, NULL);
   lv_timer_ready(timer);
+
   lv_create_global_styles();
   create_weather_screen();
   create_screen_clock();

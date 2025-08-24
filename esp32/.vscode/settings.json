@@ -1,6 +1,7 @@
 {
     "files.associations": {
-        "system_error": "c",
-        "regex": "c"
+      "system_error": "c",
+      "regex": "c",
+      "wifi.h": "c"
     }
 }
