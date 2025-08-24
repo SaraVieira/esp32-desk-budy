@@ -19,6 +19,7 @@ static bool is_day;
 static int32_t hour;
 static int32_t minute;
 static int32_t second;
+static int32_t wmo_code;
 
 static int32_t screen_1_hour_1;
 static int32_t screen_1_hour_2;
@@ -43,6 +44,7 @@ static lv_color_t cyan = lv_color_hex(0x18FFFF);
 static lv_color_t white = lv_color_hex(0xFFFFFF);
 static lv_color_t black = lv_color_hex(0x000000);
 
+// clock screen
 static lv_obj_t *hour_1;
 static lv_obj_t *hour_2;
 static lv_obj_t *minute_1;
@@ -50,8 +52,15 @@ static lv_obj_t *minute_2;
 static lv_obj_t *second_1;
 static lv_obj_t *second_2;
 static lv_obj_t *date_label;
+
+// weather screen
+static lv_obj_t *weather_icon;
+static lv_obj_t *temperature_label;
+static lv_obj_t *description_label;
+
 LV_FONT_DECLARE(teletext_24);
-LV_FONT_DECLARE(teletext_24);
+LV_FONT_DECLARE(teletext_22);
+LV_FONT_DECLARE(teletext_40);
 
 // screens
 static lv_obj_t *clock_screen;
@@ -97,15 +106,6 @@ void lv_create_global_styles()
   clearPaddings(lv_scr_act());
 }
 
-void create_weather_screen(void)
-{
-  // init style
-  static lv_style_t no_border_style;
-  lv_style_init(&no_border_style);
-  lv_style_set_border_width(&no_border_style, 0);
-  weather_screen = lv_obj_create(NULL);
-}
-
 void get_info()
 {
   if (WiFi.status() == WL_CONNECTED)
@@ -128,28 +128,29 @@ void get_info()
         // Parse the JSON
         if (!error)
         {
-          int32_t code;
           temperature = (const char *)doc["weather"]["temperature"];
           temperatureDescription = (const char *)doc["weather"]["description"];
           current_date = (const char *)doc["current"]["date"];
           hour = doc["current"]["hour"];
           minute = doc["current"]["minute"];
           second = doc["current"]["second"];
-          const char *temp = temperature.c_str();
-          const char *desc = temperatureDescription.c_str();
           std::transform(current_date.begin(), current_date.end(), current_date.begin(), ::toupper);
           const char *date = current_date.c_str();
           String final_time_str = String(hour) + ":" + String(minute) + ":" + String(second);
           const char *time = final_time_str.c_str();
-          code = doc["weather"]["code"];
+          wmo_code = doc["weather"]["code"];
           screen_1_hour_1 = doc["current"]["separated"]["eu"]["hour"]["first"];
           screen_1_hour_2 = doc["current"]["separated"]["eu"]["hour"]["second"];
           screen_1_minute_1 = doc["current"]["separated"]["eu"]["minute"]["first"];
           screen_1_minute_2 = doc["current"]["separated"]["eu"]["minute"]["second"];
           screen_1_second_1 = doc["current"]["separated"]["eu"]["second"]["first"];
           screen_1_second_2 = doc["current"]["separated"]["eu"]["second"]["second"];
-
+          std::transform(temperatureDescription.begin(), temperatureDescription.end(), temperatureDescription.begin(), ::toupper);
+          lv_label_set_text(temperature_label, temperature.c_str());
+          lv_label_set_text(description_label, temperatureDescription.c_str());
           lv_label_set_text(date_label, date);
+
+          create_image_from_wmo_code(weather_icon, wmo_code, doc["weather"]["is_day"]);
         }
         else
         {
@@ -231,6 +232,39 @@ void create_screen_clock()
   lv_obj_set_style_text_color(date_label, black, LV_PART_MAIN);
 }
 
+void create_weather_screen(void)
+{
+  static lv_style_t no_border_style;
+  lv_style_init(&no_border_style);
+  lv_style_set_border_width(&no_border_style, 0);
+  lv_style_set_text_font(&no_border_style, &teletext_24);
+  // create a container that is flex and aligns. everything to the center on the x and y axes
+  weather_screen = lv_obj_create(NULL);
+  lv_obj_set_size(weather_screen, lv_pct(100), lv_pct(100));
+  lv_obj_align(weather_screen, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_set_flex_flow(weather_screen, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_flex_align(weather_screen, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  clearPaddings(weather_screen);
+  lv_obj_add_style(weather_screen, &no_border_style, 0);
+  lv_obj_set_style_bg_color(weather_screen, black, LV_PART_MAIN);
+
+  lv_obj_t *icon_and_temp = lv_obj_create(weather_screen);
+  lv_obj_set_flex_flow(icon_and_temp, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(icon_and_temp, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  clearPaddings(icon_and_temp);
+  lv_obj_set_size(icon_and_temp, lv_pct(100), 100);
+  lv_obj_add_style(icon_and_temp, &no_border_style, 0);
+  lv_obj_set_style_bg_color(icon_and_temp, black, LV_PART_MAIN);
+
+  weather_icon = lv_image_create(icon_and_temp);
+  temperature_label = lv_label_create(icon_and_temp);
+  lv_obj_set_style_text_color(temperature_label, white, LV_PART_MAIN);
+  lv_obj_set_style_text_font(temperature_label, &teletext_40, LV_PART_MAIN);
+
+  description_label = lv_label_create(weather_screen);
+  lv_obj_set_style_text_color(description_label, magenta, LV_PART_MAIN);
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -259,7 +293,7 @@ void setup()
   create_weather_screen();
   create_screen_clock();
 
-  lv_scr_load(clock_screen);
+  lv_scr_load(weather_screen);
 }
 
 void loop()

@@ -38,6 +38,7 @@ extern "C"
     extern const lv_img_dsc_t colon;
 
     void create_image_from_number(lv_obj_t *parent, int32_t number);
+    void create_image_from_wmo_code(lv_obj_t *parent, int32_t code, bool is_night);
 
 #endif // IMAGES_H
 #ifdef __cplusplus

@@ -69,3 +69,70 @@ void create_image_from_number(lv_obj_t *parent, int32_t number)
     break;
   }
 }
+void create_image_from_wmo_code(lv_obj_t *parent, int32_t wmo_code, bool is_day)
+{
+  if (wmo_code == 0 || wmo_code == 1)
+  {
+    if (is_day)
+    {
+      lv_image_set_src(parent, &sun);
+    }
+    else
+    {
+      lv_image_set_src(parent, &moon);
+    }
+  }
+  if (wmo_code == 2)
+  {
+    if (is_day)
+    {
+      lv_image_set_src(parent, &cloud_sun);
+    }
+    else
+    {
+      lv_image_set_src(parent, &cloud_moon);
+    }
+  }
+  if (wmo_code == 3 || wmo_code == 45 || wmo_code == 48)
+  {
+
+    lv_image_set_src(parent, &clouds);
+  }
+  if (wmo_code == 65 || wmo_code == 81 || wmo_code == 82)
+  {
+    if (is_day)
+    {
+      lv_image_set_src(parent, &rain_sun);
+    }
+    else
+    {
+      lv_image_set_src(parent, &rain_moon);
+    }
+  }
+  if (wmo_code == 73 || wmo_code == 75 || wmo_code == 77 || wmo_code == 85 || wmo_code == 86)
+  {
+    if (is_day)
+    {
+      lv_image_set_src(parent, &snow_sun);
+    }
+    else
+    {
+      lv_image_set_src(parent, &snow_moon);
+    }
+  }
+  if (wmo_code == 95 || wmo_code == 96 || wmo_code == 99)
+  {
+    lv_image_set_src(parent, &lightning);
+  }
+  if (wmo_code == 51 || wmo_code == 53 || wmo_code == 55 || wmo_code == 56 || wmo_code == 57 || wmo_code == 61 || wmo_code == 63 || wmo_code == 66 || wmo_code == 67 || wmo_code == 80)
+  {
+    if (is_day)
+    {
+      lv_image_set_src(parent, &rain_sun);
+    }
+    else
+    {
+      lv_image_set_src(parent, &rain_moon);
+    }
+  }
+}
