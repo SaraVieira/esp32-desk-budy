@@ -1,7 +1,7 @@
-import { format } from "date-fns";
+import { format } from "date-fns"
 
 export function getDateAndTime() {
-  const offset = 1;
+  const offset = 1
   const UTCDate = new Date(
     Date.UTC(
       new Date().getUTCFullYear(),
@@ -11,14 +11,14 @@ export function getDateAndTime() {
       new Date().getUTCMinutes(),
       new Date().getUTCSeconds(),
     ),
-  );
-  const hour = UTCDate.getUTCHours() + offset;
-  const minute = UTCDate.getUTCMinutes();
-  const second = UTCDate.getUTCSeconds();
+  )
+  const hour = UTCDate.getUTCHours() + offset
+  const minute = UTCDate.getUTCMinutes()
+  const second = UTCDate.getUTCSeconds()
   return {
     date: format(UTCDate, "iii dd/MM/yyyy"),
     time: format(UTCDate, "HH:mm:ss"),
-    hour: hour,
+    hour,
     minute,
     second,
     separated: {
@@ -44,5 +44,5 @@ export function getDateAndTime() {
       weekday: "long",
       timeZone: "UTC",
     }),
-  };
+  }
 }
