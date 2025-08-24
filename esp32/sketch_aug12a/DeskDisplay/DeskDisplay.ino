@@ -82,6 +82,7 @@ static lv_color_t mutedDark = lv_color_hex(0x8B8B8B);
 
 // Images for numbers
 // small
+LV_IMG_DECLARE(zero);
 LV_IMG_DECLARE(one);
 LV_IMG_DECLARE(two);
 LV_IMG_DECLARE(three);
@@ -94,6 +95,7 @@ LV_IMG_DECLARE(nine);
 LV_IMG_DECLARE(colon);
 
 // big
+LV_IMG_DECLARE(zero_big);
 LV_IMG_DECLARE(one_big);
 LV_IMG_DECLARE(two_big);
 LV_IMG_DECLARE(three_big);
@@ -298,7 +300,12 @@ void get_info() {
           String final_time_str = String(hour) + ":" + String(minute) + ":" + String(second);
           const char *time = final_time_str.c_str();
           code = doc["weather"]["code"];
-          // screen_1_hour_1 = createImage(hour);
+          screen_1_hour_1 = doc["current"]["separated"]["eu"]["hour"]["first"];
+          screen_1_hour_2 = doc["current"]["separated"]["eu"]["hour"]["second"];
+          screen_1_minute_1 = doc["current"]["separated"]["eu"]["minute"]["first"];
+          screen_1_minute_2 = doc["current"]["separated"]["eu"]["minute"]["second"];
+          screen_1_second_1 = doc["current"]["separated"]["eu"]["second"]["first"];
+          screen_1_second_2 = doc["current"]["separated"]["eu"]["second"]["second"];
           // lv_label_set_text(dateLabel, date);
           // lv_label_set_text(timeLabel, time);
           // lv_label_set_text(tempLabel, temp);
@@ -346,25 +353,59 @@ void get_info() {
   }
 }
 
+
+lv_image_dsc_t create_image_from_number(int32_t number) {
+  switch (number) {
+    case 0:
+      return zero_big;
+    case 1:
+      return one_big;
+    case 2:
+      return two_big;
+    case 3:
+      return three_big;
+    case 4:
+      return four_big;
+    case 5:
+      return five_big;
+    case 6:
+      return six_big;
+    case 7:
+      return seven_big;
+    case 8:
+      return eight_big;
+    case 9:
+      return nine_big;
+  }
+
+  return zero_big;
+}
+
 void create_screen_1() {
 
-//   static int32_t screen_1_hour_1;
-// static int32_t screen_1_hour_2;
-// static int32_t screen_1_minute_1;
-// static int32_t screen_1_minute_2;
-// static int32_t screen_1_second_1;
-// static int32_t screen_1_second_2;
+  //   static int32_t screen_1_hour_1;
+  // static int32_t screen_1_hour_2;
+  // static int32_t screen_1_minute_1;
+  // static int32_t screen_1_minute_2;
+  // static int32_t screen_1_second_1;
+  // static int32_t screen_1_second_2;
   // container
   static lv_obj_t *container;
   container = lv_obj_create(lv_screen_active());
   lv_obj_set_size(container, lv_pct(100), lv_pct(100));
   lv_obj_align(container, LV_ALIGN_CENTER, 0, 0);
   lv_obj_set_flex_flow(container, LV_FLEX_FLOW_ROW);
+  lv_obj_set_style_bg_color(container, black, LV_PART_MAIN);
   clearPaddings(container);
 
-  lv_obj_t *img1 = lv_image_create(lv_screen_active());
-  lv_image_set_src(img1, &nine_big);
-  lv_obj_align(img1, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_t *hour_1 = lv_image_create(lv_screen_active());
+  lv_image_dsc_t sda = create_image_from_number(screen_1_hour_1);
+  lv_image_set_src(hour_1, &sda);
+  lv_obj_align(hour_1, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_t *hour_2 = lv_image_create(lv_screen_active());
+  lv_image_dsc_t shdk = create_image_from_number(screen_1_hour_2);
+  lv_image_set_src(hour_1, &shdk);
+  lv_obj_align(hour_1, LV_ALIGN_CENTER, 0, 0);
 }
 
 void setup() {
