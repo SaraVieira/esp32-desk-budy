@@ -41,3 +41,12 @@ export type MessageResponseEvents = {
     dates?: string[]
   }[]
 }
+
+export type MessageResponseNews = {
+  news: {
+    title: string
+    link: string
+    description: string
+    published: string
+  }[]
+}

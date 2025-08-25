@@ -11,7 +11,7 @@ function getDateAndTime() {
     return {
         date: (0, date_fns_1.format)(UTCDate, "iii dd/MM/yyyy"),
         time: (0, date_fns_1.format)(UTCDate, "HH:mm:ss"),
-        hour: hour,
+        hour,
         minute,
         second,
         separated: {

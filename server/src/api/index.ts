@@ -1,9 +1,10 @@
 import express from "express"
 
-import type { MessageResponseEvents, MessageResponseIndex } from "../interfaces/message-response.js"
+import type { MessageResponseEvents, MessageResponseIndex, MessageResponseNews } from "../interfaces/message-response.js"
 
 import { getEvents } from "../lib/calendar.js"
 import { getDateAndTime } from "../lib/current.js"
+import { getNews } from "../lib/news.js"
 import { getWeather } from "../lib/weather.js"
 
 const router = express.Router()
@@ -23,6 +24,14 @@ router.get<object, MessageResponseEvents>("/events", async (req, res) => {
 
   res.json({
     events,
+  })
+})
+
+router.get<object, MessageResponseNews>("/news", async (req, res) => {
+  const news = await getNews()
+
+  res.json({
+    news,
   })
 })
 

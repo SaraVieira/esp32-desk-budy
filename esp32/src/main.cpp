@@ -34,6 +34,15 @@ static int32_t screen_1_second_2;
 #define DRAW_BUF_SIZE (SCREEN_WIDTH * SCREEN_HEIGHT / 10 * (LV_COLOR_DEPTH / 8))
 uint32_t draw_buf[DRAW_BUF_SIZE / 4];
 
+#define BUTTON_PIN 5 // GIOP21 pin connected to button
+
+// Variables will change:
+int nextButtonPrevState = LOW; // the previous state from the input pin
+int nextButtonCurrentState;    // the current reading from the input pin
+
+// current_screen
+static int current_screen = 0; // 0 for clock, 1 for weather, 2 for calendar
+
 // Colors
 static lv_color_t red = lv_color_hex(0xFE0301);
 static lv_color_t green = lv_color_hex(0x02FF04);
@@ -141,8 +150,7 @@ void get_info()
           lv_label_set_text(temperature_label, temperature.c_str());
           lv_label_set_text(description_label, temperatureDescription.c_str());
           lv_label_set_text(date_label, date);
-
-          create_image_from_wmo_code(weather_icon, wmo_code, doc["weather"]["is_day"]);
+          create_image_from_wmo_code(weather_icon, wmo_code, doc["weather"]["isDay"] == 1);
         }
         else
         {
@@ -283,8 +291,30 @@ void setup()
   lv_create_global_styles();
   create_weather_screen();
   create_screen_clock();
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  lv_scr_load(clock_screen);
+}
 
-  lv_scr_load(weather_screen);
+void change_screens()
+{
+  current_screen++;
+  if (current_screen > 1)
+  {
+    current_screen = 0;
+  }
+
+  switch (current_screen)
+  {
+  case 0:
+    lv_scr_load(clock_screen);
+    break;
+  case 1:
+    lv_scr_load(weather_screen);
+    break;
+    // case 2:
+    //   lv_scr_load(calendar_screen);
+    //   break;
+  }
 }
 
 void loop()
@@ -299,4 +329,11 @@ void loop()
   lv_task_handler(); // let the GUI do its work
   lv_tick_inc(5);    // tell LVGL how much time has passed
   delay(5);          // let this time pass
+
+  nextButtonCurrentState = digitalRead(BUTTON_PIN);
+
+  if (nextButtonPrevState == HIGH && nextButtonCurrentState == LOW)
+    change_screens();
+  // save the the last state
+  nextButtonPrevState = nextButtonCurrentState;
 }

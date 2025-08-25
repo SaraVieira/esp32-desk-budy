@@ -71,6 +71,7 @@ void create_image_from_number(lv_obj_t *parent, int32_t number)
 }
 void create_image_from_wmo_code(lv_obj_t *parent, int32_t wmo_code, bool is_day)
 {
+
   if (wmo_code == 0 || wmo_code == 1)
   {
     if (is_day)
