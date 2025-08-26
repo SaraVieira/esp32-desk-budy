@@ -69,20 +69,26 @@ static lv_obj_t *description_label;
 
 struct Event
 {
-  String title;
-  String description;
-  String published;
+  String summary;
+  String start;
+  String end;
+  bool confirmed;
+  String startTime;
+  String endTime;
+  bool allDay;
+  String duration;
 };
 std::vector<Event> events;
 
 LV_FONT_DECLARE(teletext_24);
 LV_FONT_DECLARE(teletext_22);
+LV_FONT_DECLARE(teletext_14);
 LV_FONT_DECLARE(teletext_40);
 
 // screens
 static lv_obj_t *clock_screen;
 static lv_obj_t *weather_screen;
-static lv_obj_t *news_screen;
+static lv_obj_t *calendar_screen;
 
 static void timer_cb(lv_timer_t *timer)
 {
@@ -180,7 +186,7 @@ void get_current_time_and_weather()
   }
 }
 
-void get_news()
+void get_calendar()
 {
   if (WiFi.status() == WL_CONNECTED)
   {
@@ -188,7 +194,7 @@ void get_news()
     http.setConnectTimeout(50000000);
     http.setTimeout(50000);
     // Construct the API endpoint
-    String url = String("https://deskbuddy.deploy.iamsaravieira.com/news");
+    String url = String("https://deskbuddy.deploy.iamsaravieira.com/events");
     http.begin(url);
     int httpCode = http.GET(); // Make the GET request
 
@@ -202,20 +208,25 @@ void get_news()
         // Parse the JSON
         if (!error)
         {
-          for (JsonObject newsItem : doc["news"].as<JsonArray>())
+          for (JsonObject event : doc["events"].as<JsonArray>())
           {
-            String title = newsItem["summary"];
-            String description = newsItem["description"];
-            String published = newsItem["published"];
-            events.push_back({title, description, published});
+            String summary = event["summary"];
+            String start = event["start"];
+            String end = event["end"];
+            bool confirmed = event["confirmed"];
+            String startTime = event["startTime"];
+            String endTime = event["endTime"];
+            bool allDay = event["allDay"];
+            String duration = event["duration"];
+            events.push_back({summary, start, end, confirmed, startTime, endTime, allDay, duration});
           }
 
-          for (const auto &article : events)
+          for (const auto &calendar : events)
           {
-            Serial.println(article.title);
-            lv_obj_t *article_label = lv_label_create(news_screen);
-            lv_label_set_text(article_label, article.title.c_str());
-            lv_obj_set_style_text_color(article_label, white, LV_PART_MAIN);
+            Serial.println(calendar.summary);
+            lv_obj_t *calendar_label = lv_label_create(calendar_screen);
+            lv_label_set_text(calendar_label, calendar.summary.c_str());
+            lv_obj_set_style_text_color(calendar_label, white, LV_PART_MAIN);
           }
         }
       }
@@ -323,21 +334,22 @@ void create_weather_screen(void)
   lv_obj_set_style_text_color(description_label, magenta, LV_PART_MAIN);
 }
 
-void create_news_screen(void)
+void create_calendar_screen(void)
 {
   static lv_style_t no_border_style;
   lv_style_init(&no_border_style);
   lv_style_set_border_width(&no_border_style, 0);
-  lv_style_set_text_font(&no_border_style, &teletext_24);
+  lv_style_set_text_font(&no_border_style, &teletext_14);
   // create a container that is flex and aligns. everything to the center on the x and y axes
-  news_screen = lv_obj_create(NULL);
-  lv_obj_set_size(news_screen, lv_pct(100), lv_pct(100));
-  lv_obj_align(news_screen, LV_ALIGN_LEFT_MID, 0, 0);
-  lv_obj_set_flex_flow(news_screen, LV_FLEX_FLOW_COLUMN);
-  align_center_x_y(news_screen);
-  clear_paddings(news_screen);
-  lv_obj_add_style(news_screen, &no_border_style, 0);
-  lv_obj_set_style_bg_color(news_screen, black, LV_PART_MAIN);
+  calendar_screen = lv_obj_create(NULL);
+  lv_obj_set_size(calendar_screen, lv_pct(100), lv_pct(100));
+  lv_obj_align(calendar_screen, LV_ALIGN_LEFT_MID, 0, 0);
+  lv_obj_set_flex_flow(calendar_screen, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_flex_align(calendar_screen, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
+  align_center_x_y(calendar_screen);
+  clear_paddings(calendar_screen);
+  lv_obj_add_style(calendar_screen, &no_border_style, 0);
+  lv_obj_set_style_bg_color(calendar_screen, black, LV_PART_MAIN);
 }
 
 void setup()
@@ -366,7 +378,7 @@ void setup()
   lv_create_global_styles();
   create_weather_screen();
   create_screen_clock();
-  create_news_screen();
+  create_calendar_screen();
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   lv_scr_load(clock_screen);
 }
@@ -388,7 +400,7 @@ void change_screens()
     lv_scr_load(weather_screen);
     break;
   case 2:
-    lv_scr_load(news_screen);
+    lv_scr_load(calendar_screen);
     break;
   }
 }
@@ -400,7 +412,7 @@ void loop()
   {
     fetchTime += 15 * 60 * 1000L; // 15 minutes
     get_current_time_and_weather();
-    get_news();
+    get_calendar();
     Serial.println("Getting updated information");
   }
   lv_task_handler(); // let the GUI do its work

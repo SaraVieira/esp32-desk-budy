@@ -74,6 +74,16 @@ async function getGmailEvents(url: string) {
   )
 }
 
+function stripEmojis(str: string): string {
+  return str
+    .replace(
+      /([\u2700-\u27BF\uE000-\uF8FF\u2011-\u26FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDD10-\uDDFF])/g,
+      "",
+    )
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
 export async function getEvents(): Promise<MessageResponseEvents["events"]> {
   const gmailEvents = (await Promise.all((process.env.GMAIL_CALENDARS?.split(",") || []).map(async (url: string) => getGmailEvents(url)))).flat()
   const outlookEvents = (await Promise.all((process.env.OUTLOOK_CALENDARS?.split(",") || []).map(async (url: string) => getOutlookEvents(url)))).flat()
@@ -82,8 +92,9 @@ export async function getEvents(): Promise<MessageResponseEvents["events"]> {
     (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
   ).map(event => ({
     ...event,
+    summary: stripEmojis(event.summary),
     startTime: event.start ? format(new Date(event.start), "HH:mm") : null,
     endTime: event.end ? format(new Date(event.end), "HH:mm") : null,
     duration: event.end ? formatDistanceStrict(new Date(event.end), new Date(event.start)) : null,
-  })) as MessageResponseEvents["events"]
+  })) as unknown as MessageResponseEvents["events"]
 }
