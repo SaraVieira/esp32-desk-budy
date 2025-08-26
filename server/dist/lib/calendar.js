@@ -51,8 +51,8 @@ async function getGmailEvents(url) {
     })));
 }
 async function getEvents() {
-    const outlookEvents = (await Promise.all(JSON.parse(process.env.OUTLOOK_CALENDARS || `[]`).map(async (url) => getOutlookEvents(url)))).flat();
-    const gmailEvents = (await Promise.all(JSON.parse(process.env.GMAIL_CALENDARS || `[]`).map(async (url) => getGmailEvents(url)))).flat();
+    const gmailEvents = (await Promise.all((process.env.GMAIL_CALENDARS?.split(",") || []).map(async (url) => getGmailEvents(url)))).flat();
+    const outlookEvents = (await Promise.all((process.env.OUTLOOK_CALENDARS?.split(",") || []).map(async (url) => getOutlookEvents(url)))).flat();
     return [...gmailEvents, ...outlookEvents].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).map(event => ({
         ...event,
         startTime: event.start ? (0, date_fns_1.format)(new Date(event.start), "HH:mm") : null,

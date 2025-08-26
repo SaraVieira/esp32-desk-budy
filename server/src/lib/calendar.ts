@@ -75,9 +75,8 @@ async function getGmailEvents(url: string) {
 }
 
 export async function getEvents(): Promise<MessageResponseEvents["events"]> {
-  const outlookEvents = (await Promise.all(JSON.parse(process.env.OUTLOOK_CALENDARS || `[]`).map(async (url: string) => getOutlookEvents(url)))).flat()
-
-  const gmailEvents = (await Promise.all(JSON.parse(process.env.GMAIL_CALENDARS || `[]`).map(async (url: string) => getGmailEvents(url)))).flat()
+  const gmailEvents = (await Promise.all((process.env.GMAIL_CALENDARS?.split(",") || []).map(async (url: string) => getGmailEvents(url)))).flat()
+  const outlookEvents = (await Promise.all((process.env.OUTLOOK_CALENDARS?.split(",") || []).map(async (url: string) => getOutlookEvents(url)))).flat()
 
   return [...gmailEvents, ...outlookEvents].sort(
     (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
