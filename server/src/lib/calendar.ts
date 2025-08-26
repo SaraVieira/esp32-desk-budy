@@ -1,4 +1,4 @@
-import { differenceInDays, differenceInHours, differenceInMinutes, format, formatDistance, formatDistanceStrict, getTime } from "date-fns"
+import { differenceInDays, format, formatDistanceStrict, getTime } from "date-fns"
 import { isToday } from "date-fns/isToday"
 import { omit } from "lodash-es"
 import { sync } from "node-ical"
@@ -16,14 +16,6 @@ function getDaysArray(start: string, end: string) {
   }
   return arr
 }
-
-// Calendar URLs
-const OUTLOOK
-  = "https://outlook.office365.com/owa/calendar/f91efcaebd264b3ea3037db22dcb1797@epilot.cloud/7f0f9264bf1845bf89bea86b74aca63110921515895800548356/calendar.ics"
-const CALENDAR
-  = "https://calendar.google.com/calendar/ical/hey%40iamsaravieira.com/public/basic.ics"
-const BENFICA_CALENDAR
-  = "https://calendar.google.com/calendar/ical/spducgnrp5ph8lmsceg7c7f8p0%40group.calendar.google.com/public/basic.ics"
 
 function commonParsing(event: any) {
   return {
@@ -49,8 +41,8 @@ function todayEvents(events: any[]) {
     }))
 }
 
-async function getOutlookEvents() {
-  const outlook = await fetch(OUTLOOK).then(rsp => rsp.text())
+async function getOutlookEvents(url: string) {
+  const outlook = await fetch(url).then(rsp => rsp.text())
 
   const ical = sync.parseICS(outlook)
   const allEvents = Object.values(ical).filter(
@@ -66,24 +58,8 @@ async function getOutlookEvents() {
   )
 }
 
-async function getCalendarEvents() {
-  const calendar = await fetch(CALENDAR).then(rsp => rsp.text())
-
-  const ical = sync.parseICS(calendar)
-  const allEvents = Object.values(ical).filter(
-    event => event.type === "VEVENT",
-  )
-
-  return todayEvents(
-    allEvents.map(event => ({
-      ...commonParsing(event),
-      allDay: differenceInDays(event.end, event.start) > 1,
-    })),
-  )
-}
-
-async function getBenficaEvents() {
-  const calendar = await fetch(BENFICA_CALENDAR).then(rsp => rsp.text())
+async function getGmailEvents(url: string) {
+  const calendar = await fetch(url).then(rsp => rsp.text())
 
   const ical = sync.parseICS(calendar)
   const allEvents = Object.values(ical).filter(
@@ -99,11 +75,11 @@ async function getBenficaEvents() {
 }
 
 export async function getEvents(): Promise<MessageResponseEvents["events"]> {
-  const outlookEvents = await getOutlookEvents()
-  const calendarEvents = await getCalendarEvents()
-  const benficaEvents = await getBenficaEvents()
+  const outlookEvents = (await Promise.all(JSON.parse(process.env.OUTLOOK_CALENDARS || `[]`).map(async (url: string) => getOutlookEvents(url)))).flat()
 
-  return [...calendarEvents, ...outlookEvents, ...benficaEvents].sort(
+  const gmailEvents = (await Promise.all(JSON.parse(process.env.GMAIL_CALENDARS || `[]`).map(async (url: string) => getGmailEvents(url)))).flat()
+
+  return [...gmailEvents, ...outlookEvents].sort(
     (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
   ).map(event => ({
     ...event,

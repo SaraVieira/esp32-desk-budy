@@ -3,9 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const dotenv_1 = __importDefault(require("dotenv"));
 const app_js_1 = __importDefault(require("./app.js"));
-const env_js_1 = require("./env.js");
-const port = env_js_1.env.PORT;
+dotenv_1.default.config();
+const port = process.env.PORT || 3000;
 const server = app_js_1.default.listen(port, () => {
     /* eslint-disable no-console */
     console.log(`Listening: http://localhost:${port}`);
@@ -13,7 +14,7 @@ const server = app_js_1.default.listen(port, () => {
 });
 server.on("error", (err) => {
     if ("code" in err && err.code === "EADDRINUSE") {
-        console.error(`Port ${env_js_1.env.PORT} is already in use. Please choose another port or stop the process using it.`);
+        console.error(`Port ${process.env.PORT} is already in use. Please choose another port or stop the process using it.`);
     }
     else {
         console.error("Failed to start server:", err);
