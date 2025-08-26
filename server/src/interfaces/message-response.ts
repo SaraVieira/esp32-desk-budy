@@ -38,7 +38,9 @@ export type MessageResponseEvents = {
     startTime: string
     endTime?: string
     allDay: boolean
-    dates?: string[]
+    dates?: string[],
+    duration: number | null,
+    
   }[]
 }
 

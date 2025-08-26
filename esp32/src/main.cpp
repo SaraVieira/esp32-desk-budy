@@ -67,6 +67,14 @@ static lv_obj_t *weather_icon;
 static lv_obj_t *temperature_label;
 static lv_obj_t *description_label;
 
+struct Event
+{
+  String title;
+  String description;
+  String published;
+};
+std::vector<Event> events;
+
 LV_FONT_DECLARE(teletext_24);
 LV_FONT_DECLARE(teletext_22);
 LV_FONT_DECLARE(teletext_40);
@@ -74,6 +82,7 @@ LV_FONT_DECLARE(teletext_40);
 // screens
 static lv_obj_t *clock_screen;
 static lv_obj_t *weather_screen;
+static lv_obj_t *news_screen;
 
 static void timer_cb(lv_timer_t *timer)
 {
@@ -107,7 +116,7 @@ void lv_create_global_styles()
   clear_paddings(lv_scr_act());
 }
 
-void get_info()
+void get_current_time_and_weather()
 {
   if (WiFi.status() == WL_CONNECTED)
   {
@@ -163,6 +172,55 @@ void get_info()
     {
       Serial.printf("GET request failed for weather, error: %s\n", http.errorToString(httpCode).c_str());
     }
+    http.end(); // Close connection
+  }
+  else
+  {
+    Serial.println("Not connected to Wi-Fi");
+  }
+}
+
+void get_news()
+{
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    HTTPClient http;
+    http.setConnectTimeout(50000000);
+    http.setTimeout(50000);
+    // Construct the API endpoint
+    String url = String("https://deskbuddy.deploy.iamsaravieira.com/news");
+    http.begin(url);
+    int httpCode = http.GET(); // Make the GET request
+
+    if (httpCode > 0)
+    {
+      if (httpCode == HTTP_CODE_OK)
+      {
+        String payload = http.getString();
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, payload);
+        // Parse the JSON
+        if (!error)
+        {
+          for (JsonObject newsItem : doc["news"].as<JsonArray>())
+          {
+            String title = newsItem["summary"];
+            String description = newsItem["description"];
+            String published = newsItem["published"];
+            events.push_back({title, description, published});
+          }
+
+          for (const auto &article : events)
+          {
+            Serial.println(article.title);
+            lv_obj_t *article_label = lv_label_create(news_screen);
+            lv_label_set_text(article_label, article.title.c_str());
+            lv_obj_set_style_text_color(article_label, white, LV_PART_MAIN);
+          }
+        }
+      }
+    }
+
     http.end(); // Close connection
   }
   else
@@ -265,6 +323,23 @@ void create_weather_screen(void)
   lv_obj_set_style_text_color(description_label, magenta, LV_PART_MAIN);
 }
 
+void create_news_screen(void)
+{
+  static lv_style_t no_border_style;
+  lv_style_init(&no_border_style);
+  lv_style_set_border_width(&no_border_style, 0);
+  lv_style_set_text_font(&no_border_style, &teletext_24);
+  // create a container that is flex and aligns. everything to the center on the x and y axes
+  news_screen = lv_obj_create(NULL);
+  lv_obj_set_size(news_screen, lv_pct(100), lv_pct(100));
+  lv_obj_align(news_screen, LV_ALIGN_LEFT_MID, 0, 0);
+  lv_obj_set_flex_flow(news_screen, LV_FLEX_FLOW_COLUMN);
+  align_center_x_y(news_screen);
+  clear_paddings(news_screen);
+  lv_obj_add_style(news_screen, &no_border_style, 0);
+  lv_obj_set_style_bg_color(news_screen, black, LV_PART_MAIN);
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -291,6 +366,7 @@ void setup()
   lv_create_global_styles();
   create_weather_screen();
   create_screen_clock();
+  create_news_screen();
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   lv_scr_load(clock_screen);
 }
@@ -298,7 +374,7 @@ void setup()
 void change_screens()
 {
   current_screen++;
-  if (current_screen > 1)
+  if (current_screen > 2)
   {
     current_screen = 0;
   }
@@ -311,9 +387,9 @@ void change_screens()
   case 1:
     lv_scr_load(weather_screen);
     break;
-    // case 2:
-    //   lv_scr_load(calendar_screen);
-    //   break;
+  case 2:
+    lv_scr_load(news_screen);
+    break;
   }
 }
 
@@ -323,8 +399,9 @@ void loop()
   if (msec >= fetchTime)
   {
     fetchTime += 15 * 60 * 1000L; // 15 minutes
-    get_info();
-    Serial.println("Getting weather");
+    get_current_time_and_weather();
+    get_news();
+    Serial.println("Getting updated information");
   }
   lv_task_handler(); // let the GUI do its work
   lv_tick_inc(5);    // tell LVGL how much time has passed
