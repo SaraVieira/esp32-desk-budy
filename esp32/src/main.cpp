@@ -5,28 +5,23 @@
 #include <ArduinoJson.h>
 #include "images/images.h"
 #include "styles/styles.h"
+#include "http/calendar.h"
+#include "http/weather_time.h"
 
 // Replace with your network credentials
 const char *ssid = "honest salsas food and wine";
 const char *password = "choo choo";
 unsigned long fetchTime;
+static bool isFirstBoot = true;
 
-// Store date and time
-String temperature;
-String temperatureDescription;
-String current_date;
+static lv_obj_t *weather_icon;
+static lv_obj_t *temperature_label;
+static lv_obj_t *description_label;
 
 static int32_t hour;
 static int32_t minute;
 static int32_t second;
 static int32_t wmo_code;
-
-static int32_t screen_1_hour_1;
-static int32_t screen_1_hour_2;
-static int32_t screen_1_minute_1;
-static int32_t screen_1_minute_2;
-static int32_t screen_1_second_1;
-static int32_t screen_1_second_2;
 
 #define SCREEN_WIDTH 240
 #define SCREEN_HEIGHT 320
@@ -62,24 +57,6 @@ static lv_obj_t *second_1;
 static lv_obj_t *second_2;
 static lv_obj_t *date_label;
 
-// weather screen
-static lv_obj_t *weather_icon;
-static lv_obj_t *temperature_label;
-static lv_obj_t *description_label;
-
-struct Event
-{
-  String summary;
-  String start;
-  String end;
-  bool confirmed;
-  String startTime;
-  String endTime;
-  bool allDay;
-  String duration;
-};
-std::vector<Event> events;
-
 LV_FONT_DECLARE(teletext_24);
 LV_FONT_DECLARE(teletext_22);
 LV_FONT_DECLARE(teletext_14);
@@ -88,6 +65,7 @@ LV_FONT_DECLARE(teletext_40);
 // screens
 static lv_obj_t *clock_screen;
 static lv_obj_t *weather_screen;
+static lv_obj_t *loading_screen;
 static lv_obj_t *calendar_screen;
 
 static void timer_cb(lv_timer_t *timer)
@@ -122,124 +100,6 @@ void lv_create_global_styles()
   clear_paddings(lv_scr_act());
 }
 
-void get_current_time_and_weather()
-{
-  if (WiFi.status() == WL_CONNECTED)
-  {
-    HTTPClient http;
-    http.setConnectTimeout(50000000);
-    http.setTimeout(50000);
-    // Construct the API endpoint
-    String url = String("https://deskbuddy.deploy.iamsaravieira.com/");
-    http.begin(url);
-    int httpCode = http.GET(); // Make the GET request
-
-    if (httpCode > 0)
-    {
-      if (httpCode == HTTP_CODE_OK)
-      {
-        String payload = http.getString();
-        JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, payload);
-        // Parse the JSON
-        if (!error)
-        {
-          temperature = (const char *)doc["weather"]["temperature"];
-          temperatureDescription = (const char *)doc["weather"]["description"];
-          current_date = (const char *)doc["current"]["date"];
-          hour = doc["current"]["hour"];
-          minute = doc["current"]["minute"];
-          second = doc["current"]["second"];
-          std::transform(current_date.begin(), current_date.end(), current_date.begin(), ::toupper);
-          const char *date = current_date.c_str();
-          String final_time_str = String(hour) + ":" + String(minute) + ":" + String(second);
-          const char *time = final_time_str.c_str();
-          wmo_code = doc["weather"]["code"];
-          screen_1_hour_1 = doc["current"]["separated"]["eu"]["hour"]["first"];
-          screen_1_hour_2 = doc["current"]["separated"]["eu"]["hour"]["second"];
-          screen_1_minute_1 = doc["current"]["separated"]["eu"]["minute"]["first"];
-          screen_1_minute_2 = doc["current"]["separated"]["eu"]["minute"]["second"];
-          screen_1_second_1 = doc["current"]["separated"]["eu"]["second"]["first"];
-          screen_1_second_2 = doc["current"]["separated"]["eu"]["second"]["second"];
-          std::transform(temperatureDescription.begin(), temperatureDescription.end(), temperatureDescription.begin(), ::toupper);
-          lv_label_set_text(temperature_label, temperature.c_str());
-          lv_label_set_text(description_label, temperatureDescription.c_str());
-          lv_label_set_text(date_label, date);
-          create_image_from_wmo_code(weather_icon, wmo_code, doc["weather"]["isDay"] == 1);
-        }
-        else
-        {
-          Serial.print("deserializeJson() failed: ");
-          Serial.println(error.c_str());
-        }
-      }
-    }
-    else
-    {
-      Serial.printf("GET request failed for weather, error: %s\n", http.errorToString(httpCode).c_str());
-    }
-    http.end(); // Close connection
-  }
-  else
-  {
-    Serial.println("Not connected to Wi-Fi");
-  }
-}
-
-void get_calendar()
-{
-  if (WiFi.status() == WL_CONNECTED)
-  {
-    HTTPClient http;
-    http.setConnectTimeout(50000000);
-    http.setTimeout(50000);
-    // Construct the API endpoint
-    String url = String("https://deskbuddy.deploy.iamsaravieira.com/events");
-    http.begin(url);
-    int httpCode = http.GET(); // Make the GET request
-
-    if (httpCode > 0)
-    {
-      if (httpCode == HTTP_CODE_OK)
-      {
-        String payload = http.getString();
-        JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, payload);
-        // Parse the JSON
-        if (!error)
-        {
-          for (JsonObject event : doc["events"].as<JsonArray>())
-          {
-            String summary = event["summary"];
-            String start = event["start"];
-            String end = event["end"];
-            bool confirmed = event["confirmed"];
-            String startTime = event["startTime"];
-            String endTime = event["endTime"];
-            bool allDay = event["allDay"];
-            String duration = event["duration"];
-            events.push_back({summary, start, end, confirmed, startTime, endTime, allDay, duration});
-          }
-
-          for (const auto &calendar : events)
-          {
-            Serial.println(calendar.summary);
-            lv_obj_t *calendar_label = lv_label_create(calendar_screen);
-            lv_label_set_text(calendar_label, calendar.summary.c_str());
-            lv_obj_set_style_text_color(calendar_label, white, LV_PART_MAIN);
-          }
-        }
-      }
-    }
-
-    http.end(); // Close connection
-  }
-  else
-  {
-    Serial.println("Not connected to Wi-Fi");
-  }
-}
-
 void create_screen_clock()
 {
   // init style
@@ -272,21 +132,15 @@ void create_screen_clock()
   lv_obj_set_style_bg_color(time_container, black, LV_PART_MAIN);
 
   hour_1 = lv_image_create(time_container);
-  create_image_from_number(hour_1, screen_1_hour_1);
   hour_2 = lv_image_create(time_container);
-  create_image_from_number(hour_2, screen_1_hour_2);
   lv_obj_t *colon_hour = lv_image_create(time_container);
   lv_image_set_src(colon_hour, &colon);
   minute_1 = lv_image_create(time_container);
-  create_image_from_number(minute_1, screen_1_minute_1);
   minute_2 = lv_image_create(time_container);
-  create_image_from_number(minute_2, screen_1_minute_2);
   lv_obj_t *colon_minute = lv_image_create(time_container);
   lv_image_set_src(colon_minute, &colon);
   second_1 = lv_image_create(time_container);
-  create_image_from_number(second_1, screen_1_second_1);
   second_2 = lv_image_create(time_container);
-  create_image_from_number(second_2, screen_1_second_2);
 
   lv_obj_t *date_container = lv_obj_create(container);
   lv_obj_set_size(date_container, lv_pct(100), lv_pct(25));
@@ -345,11 +199,31 @@ void create_calendar_screen(void)
   lv_obj_set_size(calendar_screen, lv_pct(100), lv_pct(100));
   lv_obj_align(calendar_screen, LV_ALIGN_LEFT_MID, 0, 0);
   lv_obj_set_flex_flow(calendar_screen, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_flex_align(calendar_screen, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
   align_center_x_y(calendar_screen);
   clear_paddings(calendar_screen);
   lv_obj_add_style(calendar_screen, &no_border_style, 0);
   lv_obj_set_style_bg_color(calendar_screen, black, LV_PART_MAIN);
+}
+
+void create_loading_screen()
+{
+  static lv_style_t no_border_style;
+  lv_style_init(&no_border_style);
+  lv_style_set_border_width(&no_border_style, 0);
+  lv_style_set_text_font(&no_border_style, &teletext_14);
+  loading_screen = lv_obj_create(NULL);
+  lv_obj_set_size(loading_screen, lv_pct(100), lv_pct(100));
+  lv_obj_align(loading_screen, LV_ALIGN_LEFT_MID, 0, 0);
+  lv_obj_set_flex_flow(loading_screen, LV_FLEX_FLOW_COLUMN);
+  align_center_x_y(loading_screen);
+  clear_paddings(loading_screen);
+  lv_obj_add_style(loading_screen, &no_border_style, 0);
+  lv_obj_set_style_bg_color(loading_screen, black, LV_PART_MAIN);
+
+  lv_obj_t *loading_label = lv_label_create(loading_screen);
+  lv_label_set_text(loading_label, "Loading...");
+  lv_obj_set_style_text_color(loading_label, white, LV_PART_MAIN);
+  lv_obj_set_style_text_font(loading_label, &teletext_24, LV_PART_MAIN);
 }
 
 void setup()
@@ -374,13 +248,15 @@ void setup()
   lv_disp_set_theme(disp, theme);
   lv_timer_t *timer = lv_timer_create(timer_cb, 1000, NULL);
   lv_timer_ready(timer);
-
   lv_create_global_styles();
+
   create_weather_screen();
   create_screen_clock();
   create_calendar_screen();
+  create_loading_screen();
   pinMode(BUTTON_PIN, INPUT_PULLUP);
-  lv_scr_load(clock_screen);
+
+  lv_scr_load(loading_screen);
 }
 
 void change_screens()
@@ -407,17 +283,23 @@ void change_screens()
 
 void loop()
 {
+  lv_task_handler(); // let the GUI do its work
+  lv_tick_inc(5);    // tell LVGL how much time has passed
+  delay(5);          // let this time pass
   unsigned long msec = millis();
   if (msec >= fetchTime)
   {
     fetchTime += 15 * 60 * 1000L; // 15 minutes
-    get_current_time_and_weather();
-    get_calendar();
+    get_current_time_and_weather(weather_icon, temperature_label, description_label, date_label, hour, minute, second);
+    get_calendar(calendar_screen, black, white);
+    if (isFirstBoot)
+    {
+      lv_scr_load(clock_screen);
+      isFirstBoot = false;
+    }
+
     Serial.println("Getting updated information");
   }
-  lv_task_handler(); // let the GUI do its work
-  lv_tick_inc(5);    // tell LVGL how much time has passed
-  delay(5);          // let this time pass
 
   nextButtonCurrentState = digitalRead(BUTTON_PIN);
 
