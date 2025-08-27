@@ -294,7 +294,7 @@ void loop()
     get_calendar(calendar_screen, black, white);
     if (isFirstBoot)
     {
-      lv_scr_load(clock_screen);
+      lv_scr_load(calendar_screen);
       isFirstBoot = false;
     }
 

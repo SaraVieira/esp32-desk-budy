@@ -28,8 +28,8 @@ export type MessageResponseIndex = {
 
 export type MessageResponseEvents = {
   events: {
-    id: string
-    title: string
+    id?: string
+    title?: string
     description?: string
     location?: string
     start: string
@@ -38,9 +38,10 @@ export type MessageResponseEvents = {
     startTime: string
     endTime?: string
     allDay: boolean
-    dates?: string[],
-    duration: number | null,
-    
+    dates?: string[]
+    duration: string | null
+    summary: string
+
   }[]
 }
 
