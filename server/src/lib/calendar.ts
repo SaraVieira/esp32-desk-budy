@@ -1,4 +1,4 @@
-import { differenceInDays, format, formatDistanceStrict, getTime } from "date-fns"
+import { differenceInDays, format, formatDistanceStrict, getTime, isAfter } from "date-fns"
 import { isToday } from "date-fns/isToday"
 import { omit } from "lodash-es"
 import { sync } from "node-ical"
@@ -88,11 +88,10 @@ export async function getEvents(): Promise<MessageResponseEvents["events"]> {
   const gmailEvents = (await Promise.all((process.env.GMAIL_CALENDARS?.split(",") || []).map(async (url: string) => getGmailEvents(url)))).flat()
   const outlookEvents = (await Promise.all((process.env.OUTLOOK_CALENDARS?.split(",") || []).map(async (url: string) => getOutlookEvents(url)))).flat()
 
-  return [...gmailEvents, ...outlookEvents].sort(
+  return [...gmailEvents, ...outlookEvents].filter(e => isAfter(new Date(e.end), new Date())).sort(
     (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
   ).map(event => ({
     ...event,
-    // max 22 characters
     summary: stripEmojis(event.summary).slice(0, 22),
     startTime: event.start ? format(new Date(event.start), "HH:mm") : null,
     endTime: event.end ? format(new Date(event.end), "HH:mm") : null,

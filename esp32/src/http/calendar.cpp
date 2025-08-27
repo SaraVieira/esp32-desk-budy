@@ -30,6 +30,7 @@ void get_calendar(lv_obj_t *calendar_screen, lv_color_t black, lv_color_t white)
                     lv_obj_set_style_pad_row(calendar_screen, 0, LV_PART_MAIN);
                     lv_obj_set_style_pad_column(calendar_screen, 0, LV_PART_MAIN);
                     lv_obj_t *calendar_label;
+                    lv_obj_t *time_label;
                     lv_obj_t *container;
                     for (JsonObject event : doc["events"].as<JsonArray>())
                     {
@@ -55,7 +56,21 @@ void get_calendar(lv_obj_t *calendar_screen, lv_color_t black, lv_color_t white)
                         lv_obj_set_style_pad_right(container, 10, LV_PART_MAIN);
                         lv_obj_set_style_text_color(calendar_label, white, LV_PART_MAIN);
                         lv_obj_add_style(calendar_label, &no_border_style, 0);
-                        lv_obj_center(calendar_label);
+
+                        if (allDay)
+                        {
+                            time_label = lv_label_create(container);
+                            lv_label_set_text(time_label, duration.c_str());
+                            lv_obj_set_style_text_color(time_label, white, LV_PART_MAIN);
+                            lv_obj_add_style(time_label, &no_border_style, 0);
+                        }
+                        else
+                        {
+                            time_label = lv_label_create(container);
+                            lv_label_set_text(time_label, (startTime + " - " + endTime).c_str());
+                            lv_obj_set_style_text_color(time_label, white, LV_PART_MAIN);
+                            lv_obj_add_style(time_label, &no_border_style, 0);
+                        }
                     }
                 }
             }

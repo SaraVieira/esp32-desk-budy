@@ -59,9 +59,8 @@ function stripEmojis(str) {
 async function getEvents() {
     const gmailEvents = (await Promise.all((process.env.GMAIL_CALENDARS?.split(",") || []).map(async (url) => getGmailEvents(url)))).flat();
     const outlookEvents = (await Promise.all((process.env.OUTLOOK_CALENDARS?.split(",") || []).map(async (url) => getOutlookEvents(url)))).flat();
-    return [...gmailEvents, ...outlookEvents].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).map(event => ({
+    return [...gmailEvents, ...outlookEvents].filter(e => (0, date_fns_1.isAfter)(new Date(e.end), new Date())).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).map(event => ({
         ...event,
-        // max 22 characters
         summary: stripEmojis(event.summary).slice(0, 22),
         startTime: event.start ? (0, date_fns_1.format)(new Date(event.start), "HH:mm") : null,
         endTime: event.end ? (0, date_fns_1.format)(new Date(event.end), "HH:mm") : null,
