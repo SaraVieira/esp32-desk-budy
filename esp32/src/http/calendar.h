@@ -16,4 +16,4 @@ struct Event
     String duration;
 };
 
-void get_calendar(lv_obj_t *calendar_screen, lv_color_t black, lv_color_t white);
+void get_calendar(lv_obj_t *calendar_screen);

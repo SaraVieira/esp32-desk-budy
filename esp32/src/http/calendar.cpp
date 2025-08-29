@@ -1,9 +1,9 @@
 #include "calendar.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
-LV_FONT_DECLARE(teletext_14);
+#include "styles/styles.h"
 
-void get_calendar(lv_obj_t *calendar_screen, lv_color_t black, lv_color_t white)
+void get_calendar(lv_obj_t *calendar_screen)
 {
     if (WiFi.status() == WL_CONNECTED)
     {
@@ -26,8 +26,8 @@ void get_calendar(lv_obj_t *calendar_screen, lv_color_t black, lv_color_t white)
                     static lv_style_t no_border_style;
                     lv_style_init(&no_border_style);
                     lv_style_set_border_width(&no_border_style, 0);
-                    lv_style_set_text_font(&no_border_style, &lv_font_montserrat_14);
                     lv_obj_set_style_pad_row(calendar_screen, 0, LV_PART_MAIN);
+                    lv_style_set_text_font(&no_border_style, &teletext_14);
                     lv_obj_set_style_pad_column(calendar_screen, 0, LV_PART_MAIN);
                     lv_obj_t *calendar_label;
                     lv_obj_t *time_label;
@@ -67,7 +67,7 @@ void get_calendar(lv_obj_t *calendar_screen, lv_color_t black, lv_color_t white)
                         else
                         {
                             time_label = lv_label_create(container);
-                            lv_label_set_text(time_label, (startTime + " - " + endTime).c_str());
+                            lv_label_set_text(time_label, (startTime + "-" + endTime).c_str());
                             lv_obj_set_style_text_color(time_label, white, LV_PART_MAIN);
                             lv_obj_add_style(time_label, &no_border_style, 0);
                         }

@@ -32,21 +32,11 @@ uint32_t draw_buf[DRAW_BUF_SIZE / 4];
 #define BUTTON_PIN 5 // GIOP21 pin connected to button
 
 // Variables will change:
-int nextButtonPrevState = LOW; // the previous state from the input pin
-int nextButtonCurrentState;    // the current reading from the input pin
+int nextButtonPrevState = LOW;
+int nextButtonCurrentState;
 
 // current_screen
 static int current_screen = 0; // 0 for clock, 1 for weather, 2 for calendar
-
-// Colors
-static lv_color_t red = lv_color_hex(0xFE0301);
-static lv_color_t green = lv_color_hex(0x02FF04);
-static lv_color_t yellow = lv_color_hex(0xFEFF02);
-static lv_color_t blue = lv_color_hex(0x1800FF);
-static lv_color_t magenta = lv_color_hex(0xFF00FF);
-static lv_color_t cyan = lv_color_hex(0x18FFFF);
-static lv_color_t white = lv_color_hex(0xFFFFFF);
-static lv_color_t black = lv_color_hex(0x000000);
 
 // clock screen
 static lv_obj_t *hour_1;
@@ -56,11 +46,6 @@ static lv_obj_t *minute_2;
 static lv_obj_t *second_1;
 static lv_obj_t *second_2;
 static lv_obj_t *date_label;
-
-LV_FONT_DECLARE(teletext_24);
-LV_FONT_DECLARE(teletext_22);
-LV_FONT_DECLARE(teletext_14);
-LV_FONT_DECLARE(teletext_40);
 
 // screens
 static lv_obj_t *clock_screen;
@@ -194,7 +179,6 @@ void create_calendar_screen(void)
   lv_style_init(&no_border_style);
   lv_style_set_border_width(&no_border_style, 0);
   lv_style_set_text_font(&no_border_style, &teletext_14);
-  // create a container that is flex and aligns. everything to the center on the x and y axes
   calendar_screen = lv_obj_create(NULL);
   lv_obj_set_size(calendar_screen, lv_pct(100), lv_pct(100));
   lv_obj_align(calendar_screen, LV_ALIGN_LEFT_MID, 0, 0);
@@ -239,7 +223,7 @@ void setup()
 
   // Start LVGL
   lv_init();
-
+  init_colors();
   // Create a display object
   lv_display_t *disp;
   disp = lv_tft_espi_create(SCREEN_WIDTH, SCREEN_HEIGHT, draw_buf, sizeof(draw_buf));
@@ -291,7 +275,7 @@ void loop()
   {
     fetchTime += 15 * 60 * 1000L; // 15 minutes
     get_current_time_and_weather(weather_icon, temperature_label, description_label, date_label, hour, minute, second);
-    get_calendar(calendar_screen, black, white);
+    get_calendar(calendar_screen);
     if (isFirstBoot)
     {
       lv_scr_load(calendar_screen);
