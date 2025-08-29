@@ -5,6 +5,14 @@ import { sync } from "node-ical"
 
 import type { MessageResponseEvents } from "../interfaces/message-response.js"
 
+import calendars from "../calendar.json"
+
+type EnvCalendar = {
+  url: string
+  provider: "google" | "outlook"
+  type: "personal" | "work"
+}
+
 function getDaysArray(start: string, end: string) {
   const arr = []
   for (
@@ -26,10 +34,10 @@ function commonParsing(event: any) {
     startTime: event.start.toISOString().split("T")[1],
     endTime: event.end ? getTime(new Date(event.end)) : "",
     allDay: differenceInDays(event.end, event.start) > 1,
-    dates: getDaysArray(
+    dates: [...event.recurrences ? Object.keys(event.recurrences).map(key => new Date(key).toISOString()) : [], ...getDaysArray(
       event.start.toISOString(),
       event.end ? event.end.toISOString() : event.start.toISOString(),
-    ),
+    )],
   }
 }
 
@@ -41,8 +49,8 @@ function todayEvents(events: any[]) {
     }))
 }
 
-async function getOutlookEvents(url: string) {
-  const outlook = await fetch(url).then(rsp => rsp.text())
+async function getOutlookEvents(c: EnvCalendar) {
+  const outlook = await fetch(c.url).then(rsp => rsp.text())
 
   const ical = sync.parseICS(outlook)
   const allEvents = Object.values(ical).filter(
@@ -54,22 +62,24 @@ async function getOutlookEvents(url: string) {
       ...commonParsing(event),
       // @ts-expect-error exists on outlook
       allDay: event["MICROSOFT-CDO-ALLDAYEVENT"].toLowerCase() === "true",
+      calendar_type: c.type,
     })),
   )
 }
 
-async function getGmailEvents(url: string) {
-  const calendar = await fetch(url).then(rsp => rsp.text())
+async function getGmailEvents(c: EnvCalendar) {
+  const calendar = await fetch(c.url).then(rsp => rsp.text())
 
   const ical = sync.parseICS(calendar)
   const allEvents = Object.values(ical).filter(
     event => event.type === "VEVENT",
-  )
+  ) || []
 
   return todayEvents(
     allEvents.map(event => ({
       ...commonParsing(event),
       allDay: differenceInDays(event.end, event.start) > 1,
+      calendar_type: c.type,
     })),
   )
 }
@@ -85,8 +95,9 @@ function stripEmojis(str: string): string {
 }
 
 export async function getEvents(): Promise<MessageResponseEvents["events"]> {
-  const gmailEvents = (await Promise.all((process.env.GMAIL_CALENDARS?.split(",") || []).map(async (url: string) => getGmailEvents(url)))).flat()
-  const outlookEvents = (await Promise.all((process.env.OUTLOOK_CALENDARS?.split(",") || []).map(async (url: string) => getOutlookEvents(url)))).flat()
+  const gmailEvents = (await Promise.all(((calendars as EnvCalendar[]).filter(calendar => calendar.provider === "google") || []).map(async calendar => getGmailEvents(calendar)))).flat()
+
+  const outlookEvents = (await Promise.all(((calendars as EnvCalendar[]).filter(calendar => calendar.provider === "outlook") || []).map(async calendar => getOutlookEvents(calendar)))).flat()
 
   return [...gmailEvents, ...outlookEvents].filter(e => isAfter(new Date(e.end), new Date())).sort(
     (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),

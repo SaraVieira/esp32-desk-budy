@@ -1,0 +1,17 @@
+[
+    {
+        "url": "https://calendar.google.com/calendar/ical/hey%40iamsaravieira.com/public/basic.ics",
+        "provider": "google",
+        "type": "personal"
+    },
+    {
+        "url": "https://calendar.google.com/calendar/ical/sara%40geosurge.ai/public/basic.ics",
+        "provider": "google",
+        "type": "work"
+    },
+    {
+        "url": "https://outlook.office365.com/owa/calendar/f91efcaebd264b3ea3037db22dcb1797@epilot.cloud/7f0f9264bf1845bf89bea86b74aca63110921515895800548356/calendar.ics",
+        "provider": "google",
+        "type": "work"
+    }
+]

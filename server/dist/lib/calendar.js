@@ -1,10 +1,14 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEvents = getEvents;
 const date_fns_1 = require("date-fns");
 const isToday_1 = require("date-fns/isToday");
 const lodash_es_1 = require("lodash-es");
 const node_ical_1 = require("node-ical");
+const calendar_json_1 = __importDefault(require("../calendar.json"));
 function getDaysArray(start, end) {
     const arr = [];
     for (const dt = new Date(start); dt <= new Date(end); dt.setDate(dt.getDate() + 1)) {
@@ -21,7 +25,7 @@ function commonParsing(event) {
         startTime: event.start.toISOString().split("T")[1],
         endTime: event.end ? (0, date_fns_1.getTime)(new Date(event.end)) : "",
         allDay: (0, date_fns_1.differenceInDays)(event.end, event.start) > 1,
-        dates: getDaysArray(event.start.toISOString(), event.end ? event.end.toISOString() : event.start.toISOString()),
+        dates: [...event.recurrences ? Object.keys(event.recurrences).map(key => new Date(key).toISOString()) : [], ...getDaysArray(event.start.toISOString(), event.end ? event.end.toISOString() : event.start.toISOString())],
     };
 }
 function todayEvents(events) {
@@ -31,23 +35,25 @@ function todayEvents(events) {
         ...(0, lodash_es_1.omit)(event, ["dates"]),
     }));
 }
-async function getOutlookEvents(url) {
-    const outlook = await fetch(url).then(rsp => rsp.text());
+async function getOutlookEvents(c) {
+    const outlook = await fetch(c.url).then(rsp => rsp.text());
     const ical = node_ical_1.sync.parseICS(outlook);
     const allEvents = Object.values(ical).filter(event => event.type === "VEVENT");
     return todayEvents(allEvents.map(event => ({
         ...commonParsing(event),
         // @ts-expect-error exists on outlook
         allDay: event["MICROSOFT-CDO-ALLDAYEVENT"].toLowerCase() === "true",
+        calendar_type: c.type,
     })));
 }
-async function getGmailEvents(url) {
-    const calendar = await fetch(url).then(rsp => rsp.text());
+async function getGmailEvents(c) {
+    const calendar = await fetch(c.url).then(rsp => rsp.text());
     const ical = node_ical_1.sync.parseICS(calendar);
-    const allEvents = Object.values(ical).filter(event => event.type === "VEVENT");
+    const allEvents = Object.values(ical).filter(event => event.type === "VEVENT") || [];
     return todayEvents(allEvents.map(event => ({
         ...commonParsing(event),
         allDay: (0, date_fns_1.differenceInDays)(event.end, event.start) > 1,
+        calendar_type: c.type,
     })));
 }
 function stripEmojis(str) {
@@ -57,8 +63,8 @@ function stripEmojis(str) {
         .trim();
 }
 async function getEvents() {
-    const gmailEvents = (await Promise.all((process.env.GMAIL_CALENDARS?.split(",") || []).map(async (url) => getGmailEvents(url)))).flat();
-    const outlookEvents = (await Promise.all((process.env.OUTLOOK_CALENDARS?.split(",") || []).map(async (url) => getOutlookEvents(url)))).flat();
+    const gmailEvents = (await Promise.all((calendar_json_1.default.filter(calendar => calendar.provider === "google") || []).map(async (calendar) => getGmailEvents(calendar)))).flat();
+    const outlookEvents = (await Promise.all((calendar_json_1.default.filter(calendar => calendar.provider === "outlook") || []).map(async (calendar) => getOutlookEvents(calendar)))).flat();
     return [...gmailEvents, ...outlookEvents].filter(e => (0, date_fns_1.isAfter)(new Date(e.end), new Date())).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).map(event => ({
         ...event,
         summary: stripEmojis(event.summary).slice(0, 16),

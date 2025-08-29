@@ -32,6 +32,7 @@ void get_calendar(lv_obj_t *calendar_screen)
                     lv_obj_t *calendar_label;
                     lv_obj_t *time_label;
                     lv_obj_t *container;
+                    lv_obj_clean(lv_scr_act());
                     for (JsonObject event : doc["events"].as<JsonArray>())
                     {
                         String summary = event["summary"];
