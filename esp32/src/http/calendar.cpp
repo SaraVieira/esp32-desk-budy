@@ -43,11 +43,12 @@ void get_calendar(lv_obj_t *calendar_screen)
                         String endTime = event["endTime"];
                         bool allDay = event["allDay"];
                         String duration = event["duration"];
+                        String type = event["calendar_type"];
                         container = lv_obj_create(calendar_screen);
                         clear_paddings(container);
                         align_center_x_y(container);
                         lv_obj_set_size(container, lv_pct(100), 40);
-                        lv_obj_set_style_bg_color(container, black, LV_PART_MAIN);
+                        lv_obj_set_style_bg_color(container, type == "work" ? blue : (type == "personal" ? magenta : red), LV_PART_MAIN);
                         lv_obj_add_style(container, &no_border_style, 0);
                         calendar_label = lv_label_create(container);
                         lv_label_set_text(calendar_label, summary.c_str());

@@ -41,6 +41,7 @@ export type MessageResponseEvents = {
     dates?: string[]
     duration: string | null
     summary: string
+    calendar_type: "work" | "personal"
 
   }[]
 }
