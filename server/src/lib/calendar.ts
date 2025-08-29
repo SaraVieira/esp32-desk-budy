@@ -92,7 +92,7 @@ export async function getEvents(): Promise<MessageResponseEvents["events"]> {
     (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
   ).map(event => ({
     ...event,
-    summary: stripEmojis(event.summary).slice(0, 22),
+    summary: stripEmojis(event.summary).slice(0, 16),
     startTime: event.start ? format(new Date(event.start), "HH:mm") : null,
     endTime: event.end ? format(new Date(event.end), "HH:mm") : null,
     duration: event.end ? formatDistanceStrict(new Date(event.end), new Date(event.start)) : null,

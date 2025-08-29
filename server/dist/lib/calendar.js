@@ -61,7 +61,7 @@ async function getEvents() {
     const outlookEvents = (await Promise.all((process.env.OUTLOOK_CALENDARS?.split(",") || []).map(async (url) => getOutlookEvents(url)))).flat();
     return [...gmailEvents, ...outlookEvents].filter(e => (0, date_fns_1.isAfter)(new Date(e.end), new Date())).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).map(event => ({
         ...event,
-        summary: stripEmojis(event.summary).slice(0, 22),
+        summary: stripEmojis(event.summary).slice(0, 16),
         startTime: event.start ? (0, date_fns_1.format)(new Date(event.start), "HH:mm") : null,
         endTime: event.end ? (0, date_fns_1.format)(new Date(event.end), "HH:mm") : null,
         duration: event.end ? (0, date_fns_1.formatDistanceStrict)(new Date(event.end), new Date(event.start)) : null,

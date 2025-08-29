@@ -22,6 +22,7 @@ void get_current_time_and_weather(lv_obj_t *weather_icon, lv_obj_t *temperature_
                 DeserializationError error = deserializeJson(doc, payload);
                 if (!error)
                 {
+
                     String temperature = (const char *)doc["weather"]["temperature"];
                     String temperatureDescription = (const char *)doc["weather"]["description"];
                     String current_date = (const char *)doc["current"]["date"];

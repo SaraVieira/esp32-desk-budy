@@ -36,7 +36,50 @@ router.get<object, MessageResponseNews>("/news", async (req, res) => {
 })
 
 router.get<object, MessageResponseEvents>("/events-test", async (req, res) => {
-  res.json({ events: [{ summary: "OOO - ️ 4 wk Summer Ho", start: "2025-08-03T23:00:00.000Z", end: "2025-08-29T23:00:00.000Z", confirmed: true, startTime: "00:00", endTime: "00:00", allDay: true, duration: "26 days" }, { summary: "Danuta is off (public ", start: "2025-08-14T23:00:00.000Z", end: "2025-08-31T23:00:00.000Z", confirmed: true, startTime: "00:00", endTime: "00:00", allDay: true, duration: "17 days" }, { summary: "Kristin Vacation", start: "2025-08-17T23:00:00.000Z", end: "2025-08-29T23:00:00.000Z", confirmed: true, startTime: "00:00", endTime: "00:00", allDay: true, duration: "12 days" }, { summary: "Busy", start: "2025-08-27T11:00:00.000Z", end: "2025-08-27T12:00:00.000Z", confirmed: false, startTime: "12:00", endTime: "13:00", allDay: false, duration: "1 hour" }, { summary: "Busy", start: "2025-08-27T14:30:00.000Z", end: "2025-08-27T17:15:00.000Z", confirmed: false, startTime: "15:30", endTime: "18:15", allDay: false, duration: "3 hours" }, { summary: "Benfica - Fenerbahçe [", start: "2025-08-27T19:00:00.000Z", end: "2025-08-27T20:45:00.000Z", confirmed: true, startTime: "20:00", endTime: "21:45", allDay: false, duration: "2 hours" }] })
+  res.json({
+    events: [
+      {
+        summary: "OOO - ️ 4 wk Sum",
+        start: "2025-08-03T23:00:00.000Z",
+        end: "2025-08-29T23:00:00.000Z",
+        confirmed: true,
+        startTime: "00:00",
+        endTime: "00:00",
+        allDay: true,
+        duration: "26 days",
+      },
+      {
+        summary: "Danuta is off (p",
+        start: "2025-08-14T23:00:00.000Z",
+        end: "2025-08-31T23:00:00.000Z",
+        confirmed: true,
+        startTime: "00:00",
+        endTime: "00:00",
+        allDay: true,
+        duration: "17 days",
+      },
+      {
+        summary: "Kristin Vacation",
+        start: "2025-08-17T23:00:00.000Z",
+        end: "2025-08-29T23:00:00.000Z",
+        confirmed: true,
+        startTime: "00:00",
+        endTime: "00:00",
+        allDay: true,
+        duration: "12 days",
+      },
+      {
+        summary: "Sara Vieira and ",
+        start: "2025-08-29T14:00:00.000Z",
+        end: "2025-08-29T14:30:00.000Z",
+        confirmed: true,
+        startTime: "15:00",
+        endTime: "15:30",
+        allDay: false,
+        duration: "30 minutes",
+      },
+    ],
+  })
 })
 
 export default router
