@@ -65,6 +65,6 @@ async function getEvents() {
         startTime: event.start ? (0, date_fns_1.format)(new Date(event.start), "HH:mm") : null,
         endTime: event.end ? (0, date_fns_1.format)(new Date(event.end), "HH:mm") : null,
         duration: event.end ? (0, date_fns_1.formatDistanceStrict)(new Date(event.end), new Date(event.start)) : null,
-    }));
+    })).slice(0, 5);
 }
 //# sourceMappingURL=calendar.js.map

@@ -96,5 +96,5 @@ export async function getEvents(): Promise<MessageResponseEvents["events"]> {
     startTime: event.start ? format(new Date(event.start), "HH:mm") : null,
     endTime: event.end ? format(new Date(event.end), "HH:mm") : null,
     duration: event.end ? formatDistanceStrict(new Date(event.end), new Date(event.start)) : null,
-  })) as unknown as MessageResponseEvents["events"]
+  })).slice(0, 5) as unknown as MessageResponseEvents["events"]
 }
