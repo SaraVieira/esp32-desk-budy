@@ -10,7 +10,7 @@ void get_calendar(lv_obj_t *calendar_screen)
         HTTPClient http;
         http.setConnectTimeout(50000000);
         http.setTimeout(50000);
-        String url = String("https://deskbuddy.deploy.iamsaravieira.com/events-test");
+        String url = String("https://deskbuddy.deploy.iamsaravieira.com/events");
         http.begin(url);
         int httpCode = http.GET();
 
@@ -48,6 +48,7 @@ void get_calendar(lv_obj_t *calendar_screen)
                         clear_paddings(container);
                         align_center_x_y(container);
                         lv_obj_set_size(container, lv_pct(100), 40);
+                        lv_obj_set_style_radius(container, 0, LV_PART_MAIN);
                         lv_obj_set_style_bg_color(container, type == "work" ? blue : (type == "personal" ? magenta : red), LV_PART_MAIN);
                         lv_obj_add_style(container, &no_border_style, 0);
                         calendar_label = lv_label_create(container);
@@ -56,21 +57,22 @@ void get_calendar(lv_obj_t *calendar_screen)
                         lv_obj_set_flex_align(container, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
                         lv_obj_set_style_pad_left(container, 10, LV_PART_MAIN);
                         lv_obj_set_style_pad_right(container, 10, LV_PART_MAIN);
-                        lv_obj_set_style_text_color(calendar_label, white, LV_PART_MAIN);
+                        lv_obj_set_style_text_color(calendar_label, type == "work" ? white : (type == "personal" ? black : white), LV_PART_MAIN);
                         lv_obj_add_style(calendar_label, &no_border_style, 0);
 
                         if (allDay)
                         {
                             time_label = lv_label_create(container);
                             lv_label_set_text(time_label, duration.c_str());
-                            lv_obj_set_style_text_color(time_label, white, LV_PART_MAIN);
+                            lv_obj_set_style_text_color(time_label, type == "work" ? white : (type == "personal" ? black : white), LV_PART_MAIN);
+
                             lv_obj_add_style(time_label, &no_border_style, 0);
                         }
                         else
                         {
                             time_label = lv_label_create(container);
                             lv_label_set_text(time_label, (startTime + "-" + endTime).c_str());
-                            lv_obj_set_style_text_color(time_label, white, LV_PART_MAIN);
+                            lv_obj_set_style_text_color(time_label, type == "work" ? white : (type == "personal" ? black : white), LV_PART_MAIN);
                             lv_obj_add_style(time_label, &no_border_style, 0);
                         }
                     }

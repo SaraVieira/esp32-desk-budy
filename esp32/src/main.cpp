@@ -276,7 +276,7 @@ void loop()
     get_calendar(calendar_screen);
     if (isFirstBoot)
     {
-      lv_scr_load(calendar_screen);
+      lv_scr_load(clock_screen);
       isFirstBoot = false;
     }
 
