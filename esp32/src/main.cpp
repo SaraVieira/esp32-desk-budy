@@ -7,6 +7,7 @@
 #include "styles/styles.h"
 #include "http/calendar.h"
 #include "http/weather_time.h"
+#include "screens/loading.h"
 
 // Replace with your network credentials
 const char *ssid = "honest salsas food and wine";
@@ -48,11 +49,11 @@ static lv_obj_t *second_2;
 static lv_obj_t *date_label;
 
 // screens
-static lv_obj_t *clock_screen;
-static lv_obj_t *weather_screen;
-static lv_obj_t *loading_screen;
-static lv_obj_t *calendar_screen;
-static lv_obj_t *loading_animation;
+lv_obj_t *clock_screen;
+lv_obj_t *weather_screen;
+lv_obj_t *loading_screen;
+lv_obj_t *calendar_screen;
+lv_obj_t *loading_animation;
 
 static void timer_cb(lv_timer_t *timer)
 {
@@ -186,32 +187,6 @@ void create_calendar_screen(void)
   clear_paddings(calendar_screen);
   lv_obj_add_style(calendar_screen, &no_border_style, 0);
   lv_obj_set_style_bg_color(calendar_screen, black, LV_PART_MAIN);
-}
-
-static const lv_image_dsc_t *anim_imgs[4] = {
-    &loading1,
-    &loading2,
-    &loading3,
-    &loading4,
-};
-
-void create_loading_screen()
-{
-  static lv_style_t no_border_style;
-  lv_style_init(&no_border_style);
-  lv_style_set_border_width(&no_border_style, 0);
-  loading_screen = lv_obj_create(NULL);
-
-  lv_obj_set_style_bg_color(loading_screen, lv_color_hex(0x333333), LV_PART_MAIN);
-
-  loading_animation = lv_animimg_create(loading_screen);
-  lv_obj_center(loading_animation);
-  lv_animimg_set_src(loading_animation, (const void **)anim_imgs, 4);
-  lv_animimg_set_duration(loading_animation, 2400);
-  lv_animimg_set_repeat_count(loading_animation, LV_ANIM_REPEAT_INFINITE);
-  lv_animimg_start(loading_animation);
-
-  Serial.println("lv_animimg loading animation created and started");
 }
 
 void setup()
