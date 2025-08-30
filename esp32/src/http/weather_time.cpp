@@ -34,12 +34,12 @@ void get_current_time_and_weather()
                     const char *date = current_date.c_str();
                     String final_time_str = String(time_display.hour) + ":" + String(time_display.minute) + ":" + String(time_display.second);
                     const char *time = final_time_str.c_str();
-                    int32_t wmo_code = doc["weather"]["code"];
+                    weather_display.wmo_code = doc["weather"]["code"];
                     std::transform(temperatureDescription.begin(), temperatureDescription.end(), temperatureDescription.begin(), ::toupper);
                     lv_label_set_text(weather_display.temperature_label, temperature.c_str());
                     lv_label_set_text(weather_display.description_label, temperatureDescription.c_str());
                     lv_label_set_text(time_display.date_label, date);
-                    create_image_from_wmo_code(weather_display.icon, wmo_code, doc["weather"]["isDay"] == 1);
+                    create_image_from_wmo_code(weather_display.icon, weather_display.wmo_code, doc["weather"]["isDay"] == 1);
                 }
                 else
                 {

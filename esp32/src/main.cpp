@@ -12,30 +12,16 @@
 #include "screens/weather/weather.h"
 #include "screens/clock/clock.h"
 #include "types.h"
+#include "config.h"
 
-// Replace with your network credentials
-const char *const WIFI_SSID = "honest salsas food and wine";
-const char *const WIFI_PASSWORD = "choo choo";
-const unsigned long WEATHER_UPDATE_INTERVAL = 15 * 60 * 1000L; // 15 minutes
-const unsigned long LOADING_SCREEN_DURATION = 10000;
 unsigned long fetchTime;
 static bool isFirstBoot = true;
 
-// Create instance of WeatherDisplay struct
+// Create instances
+TimeDisplay time_display = {0};
 WeatherDisplay weather_display = {0};
 
-int32_t wmo_code;
-
-struct ScreenConfig
-{
-  static constexpr int WIDTH = 240;
-  static constexpr int HEIGHT = 320;
-  static constexpr int BUFFER_DIVISOR = 10;
-};
-#define DRAW_BUF_SIZE (ScreenConfig::WIDTH * ScreenConfig::HEIGHT / ScreenConfig::BUFFER_DIVISOR * (LV_COLOR_DEPTH / 8))
 uint32_t draw_buf[DRAW_BUF_SIZE / 4];
-
-#define BUTTON_PIN 5 // GIOP21 pin connected to button
 
 // Variables will change:
 int nextButtonPrevState = LOW;
@@ -49,9 +35,6 @@ enum class Screen : int
   COUNT = 3 // Useful for bounds checking
 };
 static Screen current_screen = Screen::CLOCK;
-
-// Create instance of TimeDisplay struct
-TimeDisplay time_display = {0};
 
 // screens
 lv_obj_t *clock_screen;

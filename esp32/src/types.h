@@ -27,6 +27,7 @@ struct WeatherDisplay
     lv_obj_t *icon;
     lv_obj_t *temperature_label;
     lv_obj_t *description_label;
+    int32_t wmo_code;
 };
 
 // Global instances (defined in main.cpp)
