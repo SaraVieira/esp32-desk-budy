@@ -7,27 +7,32 @@
 #include "styles/styles.h"
 #include "http/calendar.h"
 #include "http/weather_time.h"
-#include "screens/loading.h"
+#include "screens/loading/loading.h"
+#include "screens/calendar/calendar.h"
+#include "screens/weather/weather.h"
+#include "screens/clock/clock.h"
+#include "types.h"
 
 // Replace with your network credentials
-const char *ssid = "honest salsas food and wine";
-const char *password = "choo choo";
+const char *const WIFI_SSID = "honest salsas food and wine";
+const char *const WIFI_PASSWORD = "choo choo";
+const unsigned long WEATHER_UPDATE_INTERVAL = 15 * 60 * 1000L; // 15 minutes
+const unsigned long LOADING_SCREEN_DURATION = 10000;
 unsigned long fetchTime;
 static bool isFirstBoot = true;
 
-static lv_obj_t *weather_icon;
-static lv_obj_t *temperature_label;
-static lv_obj_t *description_label;
+// Create instance of WeatherDisplay struct
+WeatherDisplay weather_display = {0};
 
-static int32_t hour;
-static int32_t minute;
-static int32_t second;
-static int32_t wmo_code;
+int32_t wmo_code;
 
-#define SCREEN_WIDTH 240
-#define SCREEN_HEIGHT 320
-
-#define DRAW_BUF_SIZE (SCREEN_WIDTH * SCREEN_HEIGHT / 10 * (LV_COLOR_DEPTH / 8))
+struct ScreenConfig
+{
+  static constexpr int WIDTH = 240;
+  static constexpr int HEIGHT = 320;
+  static constexpr int BUFFER_DIVISOR = 10;
+};
+#define DRAW_BUF_SIZE (ScreenConfig::WIDTH * ScreenConfig::HEIGHT / ScreenConfig::BUFFER_DIVISOR * (LV_COLOR_DEPTH / 8))
 uint32_t draw_buf[DRAW_BUF_SIZE / 4];
 
 #define BUTTON_PIN 5 // GIOP21 pin connected to button
@@ -36,17 +41,17 @@ uint32_t draw_buf[DRAW_BUF_SIZE / 4];
 int nextButtonPrevState = LOW;
 int nextButtonCurrentState;
 
-// current_screen
-static int current_screen = 0; // 0 for clock, 1 for weather, 2 for calendar
+enum class Screen : int
+{
+  CLOCK = 0,
+  WEATHER = 1,
+  CALENDAR = 2,
+  COUNT = 3 // Useful for bounds checking
+};
+static Screen current_screen = Screen::CLOCK;
 
-// clock screen
-static lv_obj_t *hour_1;
-static lv_obj_t *hour_2;
-static lv_obj_t *minute_1;
-static lv_obj_t *minute_2;
-static lv_obj_t *second_1;
-static lv_obj_t *second_2;
-static lv_obj_t *date_label;
+// Create instance of TimeDisplay struct
+TimeDisplay time_display = {0};
 
 // screens
 lv_obj_t *clock_screen;
@@ -58,28 +63,28 @@ lv_obj_t *loading_animation;
 static void timer_cb(lv_timer_t *timer)
 {
   LV_UNUSED(timer);
-  second++;
-  if (second > 59)
+  time_display.second++;
+  if (time_display.second > 59)
   {
-    second = 0;
-    minute++;
-    if (minute > 59)
+    time_display.second = 0;
+    time_display.minute++;
+    if (time_display.minute > 59)
     {
-      minute = 0;
-      hour++;
-      if (hour > 23)
+      time_display.minute = 0;
+      time_display.hour++;
+      if (time_display.hour > 23)
       {
-        hour = 0;
+        time_display.hour = 0;
       }
     }
   }
 
-  create_image_from_number(hour_1, hour / 10);
-  create_image_from_number(hour_2, hour % 10);
-  create_image_from_number(minute_1, minute / 10);
-  create_image_from_number(minute_2, minute % 10);
-  create_image_from_number(second_1, second / 10);
-  create_image_from_number(second_2, second % 10);
+  create_image_from_number(time_display.hour_1, time_display.hour / 10);
+  create_image_from_number(time_display.hour_2, time_display.hour % 10);
+  create_image_from_number(time_display.minute_1, time_display.minute / 10);
+  create_image_from_number(time_display.minute_2, time_display.minute % 10);
+  create_image_from_number(time_display.second_1, time_display.second / 10);
+  create_image_from_number(time_display.second_2, time_display.second % 10);
 }
 
 void lv_create_global_styles()
@@ -87,114 +92,12 @@ void lv_create_global_styles()
   clear_paddings(lv_scr_act());
 }
 
-void create_screen_clock()
-{
-  // init style
-  static lv_style_t no_border_style;
-  lv_style_init(&no_border_style);
-  lv_style_set_border_width(&no_border_style, 0);
-  lv_style_set_radius(&no_border_style, 0);
-  lv_style_set_text_font(&no_border_style, &teletext_24);
-
-  // container
-  clock_screen = lv_obj_create(NULL);
-  static lv_obj_t *container;
-  container = lv_obj_create(clock_screen);
-  lv_obj_set_size(container, lv_pct(100), lv_pct(100));
-  lv_obj_align(container, LV_ALIGN_CENTER, 0, 0);
-  lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN);
-  align_center_x_y(container);
-  clear_paddings(container);
-  lv_obj_add_style(container, &no_border_style, 0);
-  lv_obj_set_style_bg_color(container, black, LV_PART_MAIN);
-
-  // create a flex row container that holds the time images
-  lv_obj_t *time_container = lv_obj_create(container);
-  lv_obj_set_size(time_container, lv_pct(100), 80);
-  lv_obj_set_flex_flow(time_container, LV_FLEX_FLOW_ROW);
-
-  align_center_x_y(time_container);
-  clear_paddings(time_container);
-  lv_obj_add_style(time_container, &no_border_style, 0);
-  lv_obj_set_style_bg_color(time_container, black, LV_PART_MAIN);
-
-  hour_1 = lv_image_create(time_container);
-  hour_2 = lv_image_create(time_container);
-  lv_obj_t *colon_hour = lv_image_create(time_container);
-  lv_image_set_src(colon_hour, &colon);
-  minute_1 = lv_image_create(time_container);
-  minute_2 = lv_image_create(time_container);
-  lv_obj_t *colon_minute = lv_image_create(time_container);
-  lv_image_set_src(colon_minute, &colon);
-  second_1 = lv_image_create(time_container);
-  second_2 = lv_image_create(time_container);
-
-  lv_obj_t *date_container = lv_obj_create(container);
-  lv_obj_set_size(date_container, lv_pct(100), lv_pct(25));
-  lv_obj_set_style_translate_y(date_container, -28, LV_PART_MAIN);
-  lv_obj_set_flex_flow(date_container, LV_FLEX_FLOW_ROW);
-  align_center_x_y(date_container);
-  clear_paddings(date_container);
-  lv_obj_add_style(date_container, &no_border_style, 0);
-  lv_obj_set_style_bg_color(date_container, blue, LV_PART_MAIN);
-
-  date_label = lv_label_create(date_container);
-  lv_obj_set_style_text_color(date_label, black, LV_PART_MAIN);
-}
-
-void create_weather_screen(void)
-{
-  static lv_style_t no_border_style;
-  lv_style_init(&no_border_style);
-  lv_style_set_border_width(&no_border_style, 0);
-  lv_style_set_text_font(&no_border_style, &teletext_24);
-  // create a container that is flex and aligns. everything to the center on the x and y axes
-  weather_screen = lv_obj_create(NULL);
-  lv_obj_set_size(weather_screen, lv_pct(100), lv_pct(100));
-  lv_obj_align(weather_screen, LV_ALIGN_CENTER, 0, 0);
-  lv_obj_set_flex_flow(weather_screen, LV_FLEX_FLOW_COLUMN);
-  align_center_x_y(weather_screen);
-  clear_paddings(weather_screen);
-  lv_obj_add_style(weather_screen, &no_border_style, 0);
-  lv_obj_set_style_bg_color(weather_screen, black, LV_PART_MAIN);
-
-  lv_obj_t *icon_and_temp = lv_obj_create(weather_screen);
-  lv_obj_set_flex_flow(icon_and_temp, LV_FLEX_FLOW_ROW);
-  align_center_x_y(icon_and_temp);
-  clear_paddings(icon_and_temp);
-  lv_obj_set_size(icon_and_temp, lv_pct(100), 100);
-  lv_obj_add_style(icon_and_temp, &no_border_style, 0);
-  lv_obj_set_style_bg_color(icon_and_temp, black, LV_PART_MAIN);
-
-  weather_icon = lv_image_create(icon_and_temp);
-  temperature_label = lv_label_create(icon_and_temp);
-  lv_obj_set_style_text_color(temperature_label, white, LV_PART_MAIN);
-  lv_obj_set_style_text_font(temperature_label, &teletext_40, LV_PART_MAIN);
-
-  description_label = lv_label_create(weather_screen);
-  lv_obj_set_style_text_color(description_label, magenta, LV_PART_MAIN);
-}
-
-void create_calendar_screen(void)
-{
-  static lv_style_t no_border_style;
-  lv_style_init(&no_border_style);
-  lv_style_set_border_width(&no_border_style, 0);
-  lv_style_set_text_font(&no_border_style, &teletext_14);
-  calendar_screen = lv_obj_create(NULL);
-  lv_obj_set_size(calendar_screen, lv_pct(100), lv_pct(100));
-  lv_obj_set_flex_flow(calendar_screen, LV_FLEX_FLOW_COLUMN);
-  clear_paddings(calendar_screen);
-  lv_obj_add_style(calendar_screen, &no_border_style, 0);
-  lv_obj_set_style_bg_color(calendar_screen, black, LV_PART_MAIN);
-}
-
 void setup()
 {
   Serial.begin(115200);
 
   // Connect to Wi-Fi
-  WiFi.begin(ssid, password);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -205,7 +108,7 @@ void setup()
   init_colors();
   // Create a display object
   lv_display_t *disp;
-  disp = lv_tft_espi_create(SCREEN_WIDTH, SCREEN_HEIGHT, draw_buf, sizeof(draw_buf));
+  disp = lv_tft_espi_create(ScreenConfig::WIDTH, ScreenConfig::HEIGHT, draw_buf, sizeof(draw_buf));
   lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_90);
   lv_theme_t *theme = lv_theme_default_init(disp, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_RED), true, LV_FONT_DEFAULT);
   lv_disp_set_theme(disp, theme);
@@ -222,27 +125,27 @@ void setup()
   lv_scr_load(loading_screen);
 
   // Initialize fetchTime so loading screen shows for a while
-  fetchTime = millis() + 10000; // Show loading screen for 10 seconds
+  fetchTime = millis() + LOADING_SCREEN_DURATION; // Show loading screen for 10 seconds
 }
-
 void change_screens()
 {
-  current_screen++;
-  if (current_screen > 2)
-  {
-    current_screen = 0;
-  }
+  current_screen = static_cast<Screen>((static_cast<int>(current_screen) + 1) % static_cast<int>(Screen::COUNT));
 
   switch (current_screen)
   {
-  case 0:
+  case Screen::CLOCK:
     lv_scr_load(clock_screen);
     break;
-  case 1:
+  case Screen::WEATHER:
     lv_scr_load(weather_screen);
     break;
-  case 2:
+  case Screen::CALENDAR:
     lv_scr_load(calendar_screen);
+    break;
+  default:
+    // Handle unexpected case
+    current_screen = Screen::CLOCK;
+    lv_scr_load(clock_screen);
     break;
   }
 }
@@ -256,9 +159,9 @@ void loop()
   unsigned long msec = millis();
   if (msec >= fetchTime)
   {
-    fetchTime += 15 * 60 * 1000L; // 15 minutes
-    get_current_time_and_weather(weather_icon, temperature_label, description_label, date_label, hour, minute, second);
-    get_calendar(calendar_screen);
+    fetchTime += WEATHER_UPDATE_INTERVAL;
+    get_current_time_and_weather();
+    get_calendar();
     if (isFirstBoot)
     {
       lv_scr_load(clock_screen);

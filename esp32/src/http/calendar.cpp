@@ -3,7 +3,8 @@
 #include <HTTPClient.h>
 #include "styles/styles.h"
 
-void get_calendar(lv_obj_t *calendar_screen)
+extern lv_obj_t *calendar_screen;
+void get_calendar()
 {
     if (WiFi.status() == WL_CONNECTED)
     {

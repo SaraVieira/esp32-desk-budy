@@ -1,5 +1,5 @@
 #include "loading.h"
-#include "../images/images.h"
+#include "../../images/images.h"
 #include <Arduino.h>
 
 // Global objects (defined in main.cpp)

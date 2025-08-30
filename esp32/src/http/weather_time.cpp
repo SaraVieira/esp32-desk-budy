@@ -2,7 +2,7 @@
 #include "../images/images.h"
 #include "../styles/styles.h"
 
-void get_current_time_and_weather(lv_obj_t *weather_icon, lv_obj_t *temperature_label, lv_obj_t *description_label, lv_obj_t *date_label, int &hour, int &minute, int &second)
+void get_current_time_and_weather()
 {
     if (WiFi.status() == WL_CONNECTED)
     {
@@ -26,20 +26,20 @@ void get_current_time_and_weather(lv_obj_t *weather_icon, lv_obj_t *temperature_
                     String temperature = (const char *)doc["weather"]["temperature"];
                     String temperatureDescription = (const char *)doc["weather"]["description"];
                     String current_date = (const char *)doc["current"]["date"];
-                    hour = doc["current"]["hour"];
-                    minute = doc["current"]["minute"];
-                    second = doc["current"]["second"];
+                    time_display.hour = doc["current"]["hour"];
+                    time_display.minute = doc["current"]["minute"];
+                    time_display.second = doc["current"]["second"];
 
                     std::transform(current_date.begin(), current_date.end(), current_date.begin(), ::toupper);
                     const char *date = current_date.c_str();
-                    String final_time_str = String(hour) + ":" + String(minute) + ":" + String(second);
+                    String final_time_str = String(time_display.hour) + ":" + String(time_display.minute) + ":" + String(time_display.second);
                     const char *time = final_time_str.c_str();
                     int32_t wmo_code = doc["weather"]["code"];
                     std::transform(temperatureDescription.begin(), temperatureDescription.end(), temperatureDescription.begin(), ::toupper);
-                    lv_label_set_text(temperature_label, temperature.c_str());
-                    lv_label_set_text(description_label, temperatureDescription.c_str());
-                    lv_label_set_text(date_label, date);
-                    create_image_from_wmo_code(weather_icon, wmo_code, doc["weather"]["isDay"] == 1);
+                    lv_label_set_text(weather_display.temperature_label, temperature.c_str());
+                    lv_label_set_text(weather_display.description_label, temperatureDescription.c_str());
+                    lv_label_set_text(time_display.date_label, date);
+                    create_image_from_wmo_code(weather_display.icon, wmo_code, doc["weather"]["isDay"] == 1);
                 }
                 else
                 {
