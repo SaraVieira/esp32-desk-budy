@@ -52,6 +52,7 @@ static lv_obj_t *clock_screen;
 static lv_obj_t *weather_screen;
 static lv_obj_t *loading_screen;
 static lv_obj_t *calendar_screen;
+static lv_obj_t *loading_animation;
 
 static void timer_cb(lv_timer_t *timer)
 {
@@ -187,25 +188,30 @@ void create_calendar_screen(void)
   lv_obj_set_style_bg_color(calendar_screen, black, LV_PART_MAIN);
 }
 
+static const lv_image_dsc_t *anim_imgs[4] = {
+    &loading1,
+    &loading2,
+    &loading3,
+    &loading4,
+};
+
 void create_loading_screen()
 {
   static lv_style_t no_border_style;
   lv_style_init(&no_border_style);
   lv_style_set_border_width(&no_border_style, 0);
-  lv_style_set_text_font(&no_border_style, &teletext_14);
   loading_screen = lv_obj_create(NULL);
-  lv_obj_set_size(loading_screen, lv_pct(100), lv_pct(100));
-  lv_obj_align(loading_screen, LV_ALIGN_LEFT_MID, 0, 0);
-  lv_obj_set_flex_flow(loading_screen, LV_FLEX_FLOW_COLUMN);
-  align_center_x_y(loading_screen);
-  clear_paddings(loading_screen);
-  lv_obj_add_style(loading_screen, &no_border_style, 0);
-  lv_obj_set_style_bg_color(loading_screen, black, LV_PART_MAIN);
 
-  lv_obj_t *loading_label = lv_label_create(loading_screen);
-  lv_label_set_text(loading_label, "Loading...");
-  lv_obj_set_style_text_color(loading_label, white, LV_PART_MAIN);
-  lv_obj_set_style_text_font(loading_label, &teletext_24, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(loading_screen, lv_color_hex(0x333333), LV_PART_MAIN);
+
+  loading_animation = lv_animimg_create(loading_screen);
+  lv_obj_center(loading_animation);
+  lv_animimg_set_src(loading_animation, (const void **)anim_imgs, 4);
+  lv_animimg_set_duration(loading_animation, 2400);
+  lv_animimg_set_repeat_count(loading_animation, LV_ANIM_REPEAT_INFINITE);
+  lv_animimg_start(loading_animation);
+
+  Serial.println("lv_animimg loading animation created and started");
 }
 
 void setup()
@@ -239,6 +245,9 @@ void setup()
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   lv_scr_load(loading_screen);
+
+  // Initialize fetchTime so loading screen shows for a while
+  fetchTime = millis() + 10000; // Show loading screen for 10 seconds
 }
 
 void change_screens()
@@ -268,6 +277,7 @@ void loop()
   lv_task_handler(); // let the GUI do its work
   lv_tick_inc(5);    // tell LVGL how much time has passed
   delay(5);          // let this time pass
+
   unsigned long msec = millis();
   if (msec >= fetchTime)
   {

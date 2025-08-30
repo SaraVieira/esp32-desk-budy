@@ -33,6 +33,11 @@ LV_IMG_DECLARE(eight);
 LV_IMG_DECLARE(nine);
 LV_IMG_DECLARE(colon);
 
+LV_IMAGE_DECLARE(loading1);
+LV_IMAGE_DECLARE(loading4);
+LV_IMAGE_DECLARE(loading2);
+LV_IMAGE_DECLARE(loading3);
+
 void create_image_from_number(lv_obj_t *parent, int32_t number)
 {
   switch (number)

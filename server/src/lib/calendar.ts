@@ -98,8 +98,8 @@ export async function getEvents(): Promise<MessageResponseEvents["events"]> {
   const gmailEvents = (await Promise.all(((calendars as EnvCalendar[]).filter(calendar => calendar.provider === "google") || []).map(async calendar => getGmailEvents(calendar)))).flat()
 
   const outlookEvents = (await Promise.all(((calendars as EnvCalendar[]).filter(calendar => calendar.provider === "outlook") || []).map(async calendar => getOutlookEvents(calendar)))).flat()
-
-  return [...gmailEvents, ...outlookEvents].filter(e => isAfter(new Date(e.end), new Date())).sort(
+  // .filter(e => isAfter(new Date(e.end), new Date()))
+  return [...gmailEvents, ...outlookEvents].sort(
     (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
   ).map(event => ({
     ...event,
