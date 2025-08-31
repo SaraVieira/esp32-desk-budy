@@ -5,8 +5,6 @@ import { sync } from "node-ical"
 
 import type { MessageResponseEvents } from "../interfaces/message-response.js"
 
-import calendars from "../calendar.json"
-
 type EnvCalendar = {
   url: string
   provider: "google" | "outlook"
@@ -95,6 +93,7 @@ function stripEmojis(str: string): string {
 }
 
 export async function getEvents(): Promise<MessageResponseEvents["events"]> {
+  const calendars = JSON.parse(process.env.CALENDARS || "[]")
   const gmailEvents = (await Promise.all(((calendars as EnvCalendar[]).filter(calendar => calendar.provider === "google") || []).map(async calendar => getGmailEvents(calendar)))).flat()
 
   const outlookEvents = (await Promise.all(((calendars as EnvCalendar[]).filter(calendar => calendar.provider === "outlook") || []).map(async calendar => getOutlookEvents(calendar)))).flat()

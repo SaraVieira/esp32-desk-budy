@@ -1,14 +1,10 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEvents = getEvents;
 const date_fns_1 = require("date-fns");
 const isToday_1 = require("date-fns/isToday");
 const lodash_es_1 = require("lodash-es");
 const node_ical_1 = require("node-ical");
-const calendar_json_1 = __importDefault(require("../calendar.json"));
 function getDaysArray(start, end) {
     const arr = [];
     for (const dt = new Date(start); dt <= new Date(end); dt.setDate(dt.getDate() + 1)) {
@@ -63,9 +59,11 @@ function stripEmojis(str) {
         .trim();
 }
 async function getEvents() {
-    const gmailEvents = (await Promise.all((calendar_json_1.default.filter(calendar => calendar.provider === "google") || []).map(async (calendar) => getGmailEvents(calendar)))).flat();
-    const outlookEvents = (await Promise.all((calendar_json_1.default.filter(calendar => calendar.provider === "outlook") || []).map(async (calendar) => getOutlookEvents(calendar)))).flat();
-    return [...gmailEvents, ...outlookEvents].filter(e => (0, date_fns_1.isAfter)(new Date(e.end), new Date())).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).map(event => ({
+    const calendars = JSON.parse(process.env.CALENDARS || "[]");
+    const gmailEvents = (await Promise.all((calendars.filter(calendar => calendar.provider === "google") || []).map(async (calendar) => getGmailEvents(calendar)))).flat();
+    const outlookEvents = (await Promise.all((calendars.filter(calendar => calendar.provider === "outlook") || []).map(async (calendar) => getOutlookEvents(calendar)))).flat();
+    // .filter(e => isAfter(new Date(e.end), new Date()))
+    return [...gmailEvents, ...outlookEvents].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).map(event => ({
         ...event,
         summary: stripEmojis(event.summary).slice(0, 16),
         startTime: event.start ? (0, date_fns_1.format)(new Date(event.start), "HH:mm") : null,
