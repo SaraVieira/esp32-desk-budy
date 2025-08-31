@@ -11,6 +11,7 @@
 #include "screens/calendar/calendar.h"
 #include "screens/weather/weather.h"
 #include "screens/clock/clock.h"
+#include "mic/mic.h"
 #include "types.h"
 #include "config.h"
 
@@ -160,4 +161,7 @@ void loop()
     change_screens();
   // save the the last state
   nextButtonPrevState = nextButtonCurrentState;
+  if (!isFirstBoot)
+    read_mic();
 }
+
