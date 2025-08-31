@@ -4,6 +4,40 @@
 #include "styles/styles.h"
 
 extern lv_obj_t *calendar_screen;
+
+struct color
+{
+    lv_color_t bg;
+    lv_color_t text;
+};
+
+struct color get_colors(String type)
+{
+    struct color eventColor;
+    if (type == "work")
+    {
+        eventColor.bg = blue;
+        eventColor.text = white;
+    }
+    else if (type == "personal")
+    {
+        eventColor.bg = magenta;
+        eventColor.text = black;
+    }
+    else if (type == "hobby")
+    {
+        eventColor.bg = cyan;
+        eventColor.text = black;
+    }
+    else
+    {
+        eventColor.bg = green;
+        eventColor.text = black;
+    }
+
+    return eventColor;
+}
+
 void get_calendar()
 {
     if (WiFi.status() == WL_CONNECTED)
@@ -36,6 +70,7 @@ void get_calendar()
                     lv_obj_clean(lv_scr_act());
                     for (JsonObject event : doc["events"].as<JsonArray>())
                     {
+
                         String summary = event["summary"];
                         String start = event["start"];
                         String end = event["end"];
@@ -45,12 +80,13 @@ void get_calendar()
                         bool allDay = event["allDay"];
                         String duration = event["duration"];
                         String type = event["calendar_type"];
+
                         container = lv_obj_create(calendar_screen);
                         clear_paddings(container);
                         align_center_x_y(container);
                         lv_obj_set_size(container, lv_pct(100), 40);
                         lv_obj_set_style_radius(container, 0, LV_PART_MAIN);
-                        lv_obj_set_style_bg_color(container, type == "work" ? blue : (type == "personal" ? magenta : red), LV_PART_MAIN);
+                        lv_obj_set_style_bg_color(container, get_colors(type).bg, LV_PART_MAIN);
                         lv_obj_add_style(container, &no_border_style, 0);
                         calendar_label = lv_label_create(container);
                         lv_label_set_text(calendar_label, summary.c_str());
@@ -58,14 +94,14 @@ void get_calendar()
                         lv_obj_set_flex_align(container, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
                         lv_obj_set_style_pad_left(container, 10, LV_PART_MAIN);
                         lv_obj_set_style_pad_right(container, 10, LV_PART_MAIN);
-                        lv_obj_set_style_text_color(calendar_label, type == "work" ? white : (type == "personal" ? black : white), LV_PART_MAIN);
+                        lv_obj_set_style_text_color(calendar_label, get_colors(type).text, LV_PART_MAIN);
                         lv_obj_add_style(calendar_label, &no_border_style, 0);
 
                         if (allDay)
                         {
                             time_label = lv_label_create(container);
                             lv_label_set_text(time_label, duration.c_str());
-                            lv_obj_set_style_text_color(time_label, type == "work" ? white : (type == "personal" ? black : white), LV_PART_MAIN);
+                            lv_obj_set_style_text_color(time_label, get_colors(type).text, LV_PART_MAIN);
 
                             lv_obj_add_style(time_label, &no_border_style, 0);
                         }
@@ -73,7 +109,7 @@ void get_calendar()
                         {
                             time_label = lv_label_create(container);
                             lv_label_set_text(time_label, (startTime + "-" + endTime).c_str());
-                            lv_obj_set_style_text_color(time_label, type == "work" ? white : (type == "personal" ? black : white), LV_PART_MAIN);
+                            lv_obj_set_style_text_color(time_label, get_colors(type).text, LV_PART_MAIN);
                             lv_obj_add_style(time_label, &no_border_style, 0);
                         }
                     }

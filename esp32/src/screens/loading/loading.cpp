@@ -28,6 +28,4 @@ void create_loading_screen(void)
     lv_animimg_set_duration(loading_animation, 2400);
     lv_animimg_set_repeat_count(loading_animation, LV_ANIM_REPEAT_INFINITE);
     lv_animimg_start(loading_animation);
-
-    Serial.println("lv_animimg loading animation created and started");
 }
