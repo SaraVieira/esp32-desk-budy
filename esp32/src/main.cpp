@@ -44,31 +44,46 @@ lv_obj_t *loading_screen;
 lv_obj_t *calendar_screen;
 lv_obj_t *loading_animation;
 
-static void timer_cb(lv_timer_t *timer)
+static int64_t lastTime = 0;
+static void timer_cb()
 {
-  LV_UNUSED(timer);
-  time_display.second++;
-  if (time_display.second > 59)
+  float_t in_seconds = (esp_timer_get_time() - lastTime) / 1000000;
+  if (in_seconds > 0.99)
   {
-    time_display.second = 0;
-    time_display.minute++;
-    if (time_display.minute > 59)
+    lastTime = esp_timer_get_time();
+    if (in_seconds > 1)
     {
-      time_display.minute = 0;
-      time_display.hour++;
-      if (time_display.hour > 23)
+      Serial.printf("Timer called after %f seconds\n", in_seconds);
+      time_display.second += (int)in_seconds;
+    }
+    else
+    {
+
+      time_display.second++;
+    }
+
+    if (time_display.second > 59)
+    {
+      time_display.second = 0;
+      time_display.minute++;
+      if (time_display.minute > 59)
       {
-        time_display.hour = 0;
+        time_display.minute = 0;
+        time_display.hour++;
+        if (time_display.hour > 23)
+        {
+          time_display.hour = 0;
+        }
       }
     }
-  }
 
-  create_image_from_number(time_display.hour_1, time_display.hour / 10);
-  create_image_from_number(time_display.hour_2, time_display.hour % 10);
-  create_image_from_number(time_display.minute_1, time_display.minute / 10);
-  create_image_from_number(time_display.minute_2, time_display.minute % 10);
-  create_image_from_number(time_display.second_1, time_display.second / 10);
-  create_image_from_number(time_display.second_2, time_display.second % 10);
+    create_image_from_number(time_display.hour_1, time_display.hour / 10);
+    create_image_from_number(time_display.hour_2, time_display.hour % 10);
+    create_image_from_number(time_display.minute_1, time_display.minute / 10);
+    create_image_from_number(time_display.minute_2, time_display.minute % 10);
+    create_image_from_number(time_display.second_1, time_display.second / 10);
+    create_image_from_number(time_display.second_2, time_display.second % 10);
+  }
 }
 
 void lv_create_global_styles()
@@ -96,8 +111,6 @@ void setup()
   lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_90);
   lv_theme_t *theme = lv_theme_default_init(disp, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_RED), true, LV_FONT_DEFAULT);
   lv_disp_set_theme(disp, theme);
-  lv_timer_t *timer = lv_timer_create(timer_cb, 1000, NULL);
-  lv_timer_ready(timer);
   lv_create_global_styles();
 
   create_weather_screen();
@@ -139,7 +152,7 @@ void loop()
   lv_task_handler(); // let the GUI do its work
   lv_tick_inc(5);    // tell LVGL how much time has passed
   delay(5);          // let this time pass
-
+  timer_cb();
   unsigned long msec = millis();
   if (msec >= fetchTime)
   {
@@ -159,9 +172,8 @@ void loop()
 
   if (nextButtonPrevState == HIGH && nextButtonCurrentState == LOW)
     change_screens();
-  // save the the last state
+
   nextButtonPrevState = nextButtonCurrentState;
   if (!isFirstBoot)
     read_mic();
 }
-
