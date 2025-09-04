@@ -10,7 +10,8 @@ const unsigned long WEATHER_UPDATE_INTERVAL = 15 * 60 * 1000L; // 15 minutes
 const unsigned long LOADING_SCREEN_DURATION = 10000;           // 10 seconds
 
 // Hardware Configuration
-#define BUTTON_PIN 5 // GPIO5 pin connected to button
+#define BUTTON_PIN_NEXT 5
+#define BUTTON_PIN_PREV 18
 
 // Display Configuration
 struct ScreenConfig

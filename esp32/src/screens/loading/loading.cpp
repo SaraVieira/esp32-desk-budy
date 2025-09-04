@@ -28,4 +28,5 @@ void create_loading_screen(void)
     lv_animimg_set_duration(loading_animation, 2400);
     lv_animimg_set_repeat_count(loading_animation, LV_ANIM_REPEAT_INFINITE);
     lv_animimg_start(loading_animation);
+    lv_obj_add_flag(loading_screen, LV_OBJ_FLAG_FLOATING);
 }

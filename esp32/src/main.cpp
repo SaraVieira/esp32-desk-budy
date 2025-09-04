@@ -28,6 +28,9 @@ uint32_t draw_buf[DRAW_BUF_SIZE / 4];
 int nextButtonPrevState = LOW;
 int nextButtonCurrentState;
 
+int prevButtonPrevState = LOW;
+int prevButtonCurrentState;
+
 enum class Screen : int
 {
   CLOCK = 0,
@@ -53,7 +56,6 @@ static void timer_cb()
     lastTime = esp_timer_get_time();
     if (in_seconds > 1)
     {
-      Serial.printf("Timer called after %f seconds\n", in_seconds);
       time_display.second += (int)in_seconds;
     }
     else
@@ -117,17 +119,22 @@ void setup()
   create_screen_clock();
   create_calendar_screen();
   create_loading_screen();
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_PIN_NEXT, INPUT_PULLUP);
+  pinMode(BUTTON_PIN_PREV, INPUT_PULLUP);
 
   lv_scr_load(loading_screen);
 
   // Initialize fetchTime so loading screen shows for a while
   fetchTime = millis() + LOADING_SCREEN_DURATION; // Show loading screen for 10 seconds
 }
-void change_screens()
+void change_screens(int value)
 {
-  current_screen = static_cast<Screen>((static_cast<int>(current_screen) + 1) % static_cast<int>(Screen::COUNT));
 
+  current_screen = static_cast<Screen>((static_cast<int>(current_screen) + value) % static_cast<int>(Screen::COUNT));
+  if (static_cast<int>(current_screen) < 0)
+  {
+    current_screen = Screen::CALENDAR;
+  }
   switch (current_screen)
   {
   case Screen::CLOCK:
@@ -168,12 +175,16 @@ void loop()
     Serial.println("Getting updated information");
   }
 
-  nextButtonCurrentState = digitalRead(BUTTON_PIN);
+  nextButtonCurrentState = digitalRead(BUTTON_PIN_NEXT);
+  prevButtonCurrentState = digitalRead(BUTTON_PIN_PREV);
 
   if (nextButtonPrevState == HIGH && nextButtonCurrentState == LOW)
-    change_screens();
+    change_screens(1);
+  if (prevButtonPrevState == HIGH && prevButtonCurrentState == LOW)
+    change_screens(-1);
 
   nextButtonPrevState = nextButtonCurrentState;
+  prevButtonPrevState = prevButtonCurrentState;
   if (!isFirstBoot)
     read_mic();
 }
