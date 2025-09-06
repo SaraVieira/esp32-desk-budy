@@ -110,7 +110,7 @@ void setup()
   // Create a display object
   lv_display_t *disp;
   disp = lv_tft_espi_create(ScreenConfig::WIDTH, ScreenConfig::HEIGHT, draw_buf, sizeof(draw_buf));
-  lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_90);
+  lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_270);
   lv_theme_t *theme = lv_theme_default_init(disp, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_RED), true, LV_FONT_DEFAULT);
   lv_disp_set_theme(disp, theme);
   lv_create_global_styles();
