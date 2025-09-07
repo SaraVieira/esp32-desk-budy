@@ -3,6 +3,16 @@
 
 #include <lvgl.h>
 
+void change_screens(int value);
+
+enum class Screen : int
+{
+    CLOCK = 0,
+    WEATHER = 1,
+    CALENDAR = 2,
+    COUNT = 3 // Useful for bounds checking
+};
+extern Screen current_screen;
 // Structure to group time display elements
 struct TimeDisplay
 {

@@ -31,14 +31,7 @@ int nextButtonCurrentState;
 int prevButtonPrevState = LOW;
 int prevButtonCurrentState;
 
-enum class Screen : int
-{
-  CLOCK = 0,
-  WEATHER = 1,
-  CALENDAR = 2,
-  COUNT = 3 // Useful for bounds checking
-};
-static Screen current_screen = Screen::CLOCK;
+Screen current_screen = Screen::CLOCK;
 
 // screens
 lv_obj_t *clock_screen;
@@ -131,10 +124,12 @@ void change_screens(int value)
 {
 
   current_screen = static_cast<Screen>((static_cast<int>(current_screen) + value) % static_cast<int>(Screen::COUNT));
+
   if (static_cast<int>(current_screen) < 0)
   {
     current_screen = Screen::CALENDAR;
   }
+
   switch (current_screen)
   {
   case Screen::CLOCK:
@@ -160,12 +155,20 @@ void loop()
   lv_tick_inc(5);    // tell LVGL how much time has passed
   delay(5);          // let this time pass
   timer_cb();
+
+  yield(); // Let system tasks run after LVGL operations
+
   unsigned long msec = millis();
   if (msec >= fetchTime)
   {
     fetchTime += WEATHER_UPDATE_INTERVAL;
+
     get_current_time_and_weather();
+    yield(); // Let system tasks run between HTTP requests
+
     get_calendar();
+    yield(); // Let system tasks run after HTTP requests
+
     if (isFirstBoot)
     {
       lv_scr_load(clock_screen);
@@ -185,6 +188,12 @@ void loop()
 
   nextButtonPrevState = nextButtonCurrentState;
   prevButtonPrevState = prevButtonCurrentState;
+
   if (!isFirstBoot)
+  {
+    yield(); // Let system tasks run before mic processing
     read_mic();
+  }
+
+  yield(); // Final yield at end of loop
 }
