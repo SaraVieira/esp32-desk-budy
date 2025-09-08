@@ -11,17 +11,22 @@
 #include "screens/calendar/calendar.h"
 #include "screens/weather/weather.h"
 #include "screens/clock/clock.h"
+#include "screens/spotify/spotify.h"
 #include "mic/mic.h"
+#include <SpotifyArduino.h>
+#include <SpotifyArduinoCert.h>
+#include "secrets.h"
 #include "types.h"
 #include "config.h"
 
 unsigned long fetchTime;
 static bool isFirstBoot = true;
 
+WiFiClientSecure client;
 // Create instances
 TimeDisplay time_display = {0};
 WeatherDisplay weather_display = {0};
-
+SpotifyArduino spotify(client, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REFRESH_TOKEN);
 uint32_t draw_buf[DRAW_BUF_SIZE / 4];
 
 // Variables will change:
@@ -41,6 +46,9 @@ lv_obj_t *calendar_screen;
 lv_obj_t *loading_animation;
 
 static int64_t lastTime = 0;
+unsigned long delayBetweenRequests = 60000; // Time between requests (1 minute)
+unsigned long requestDueTime;               // time when request due
+
 static void timer_cb()
 {
   float_t in_seconds = (esp_timer_get_time() - lastTime) / 1000000;
@@ -96,7 +104,7 @@ void setup()
   {
     delay(500);
   }
-
+  client.setCACert(spotify_server_cert);
   // Start LVGL
   lv_init();
   init_colors();
@@ -193,6 +201,24 @@ void loop()
   {
     yield(); // Let system tasks run before mic processing
     read_mic();
+  }
+  if (millis() > requestDueTime)
+  {
+    int status = spotify.getCurrentlyPlaying(printCurrentlyPlayingToSerial);
+    if (status == 200)
+    {
+      // all good
+    }
+    else if (status == 204)
+    {
+      Serial.println("Doesn't seem to be anything playing");
+    }
+    else
+    {
+      Serial.print("Error: ");
+      Serial.println(status);
+    }
+    requestDueTime = millis() + delayBetweenRequests;
   }
 
   yield(); // Final yield at end of loop

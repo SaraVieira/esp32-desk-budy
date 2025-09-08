@@ -1,10 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-// Network Configuration
-const char *const WIFI_SSID = "honest salsas food and wine";
-const char *const WIFI_PASSWORD = "choo choo";
-
 // Timing Configuration
 const unsigned long WEATHER_UPDATE_INTERVAL = 15 * 60 * 1000L; // 15 minutes
 const unsigned long LOADING_SCREEN_DURATION = 10000;           // 10 seconds

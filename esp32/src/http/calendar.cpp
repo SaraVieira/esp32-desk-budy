@@ -68,6 +68,27 @@ void get_calendar()
                     lv_obj_t *time_label;
                     lv_obj_t *container;
                     lv_obj_clean(lv_scr_act());
+                    if (doc["events"].size() == 0)
+                    {
+                        // No events
+                        container = lv_obj_create(calendar_screen);
+                        clear_paddings(container);
+                        align_center_x_y(container);
+                        lv_obj_set_size(container, lv_pct(100), lv_pct(100));
+                        lv_obj_set_style_radius(container, 0, LV_PART_MAIN);
+                        lv_obj_set_style_bg_color(container, black, LV_PART_MAIN);
+                        lv_obj_add_style(container, &no_border_style, 0);
+                        calendar_label = lv_label_create(container);
+                        lv_obj_set_style_text_font(calendar_label, &teletext_40, 0);
+                        lv_label_set_text(calendar_label, "No events");
+                        lv_obj_set_flex_flow(container, LV_FLEX_FLOW_ROW);
+                        lv_obj_set_flex_align(container, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+                        lv_obj_set_style_pad_left(container, 10, LV_PART_MAIN);
+                        lv_obj_set_style_pad_right(container, 10, LV_PART_MAIN);
+                        lv_obj_set_style_text_color(calendar_label, white, LV_PART_MAIN);
+                        lv_obj_add_style(calendar_label, &no_border_style, 0);
+                        return;
+                    }
                     for (JsonObject event : doc["events"].as<JsonArray>())
                     {
 
