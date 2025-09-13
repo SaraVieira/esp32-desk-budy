@@ -1,7 +1,9 @@
+#include "SPIFFS.h"
 #include <lvgl.h>
 #include <TFT_eSPI.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <AiEsp32RotaryEncoder.h>
 #include <ArduinoJson.h>
 #include "images/images.h"
 #include "styles/styles.h"
@@ -18,9 +20,17 @@
 #include "secrets.h"
 #include "types.h"
 #include "config.h"
+#include <map>
 
 unsigned long fetchTime;
 static bool isFirstBoot = true;
+
+// instead of changing here, rather change numbers above
+AiEsp32RotaryEncoder rotaryEncoder = AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, ROTARY_ENCODER_VCC_PIN, ROTARY_ENCODER_STEPS);
+
+bool DIRECTION_CW_SELECTED = false; // true means clockwise increases values
+bool DIRECTION_CCW_SELECTED = false;
+int32_t lastEncoderValue = 0;
 
 WiFiClientSecure client;
 // Create instances
@@ -36,17 +46,24 @@ int nextButtonCurrentState;
 int prevButtonPrevState = LOW;
 int prevButtonCurrentState;
 
-Screen current_screen = Screen::CLOCK;
+Screen current_screen = Screen::SPOTIFY;
 
 // screens
 lv_obj_t *clock_screen;
 lv_obj_t *weather_screen;
 lv_obj_t *loading_screen;
 lv_obj_t *calendar_screen;
+lv_obj_t *spotify_screen;
 lv_obj_t *loading_animation;
 
+std::map<Screen, lv_obj_t **> screen_map = {
+    {Screen::CLOCK, &clock_screen},
+    {Screen::WEATHER, &weather_screen},
+    {Screen::CALENDAR, &calendar_screen},
+    {Screen::SPOTIFY, &spotify_screen}};
+
 static int64_t lastTime = 0;
-unsigned long delayBetweenRequests = 60000; // Time between requests (1 minute)
+unsigned long delayBetweenRequests = 20000; // Time between requests (20 seconds)
 unsigned long requestDueTime;               // time when request due
 
 static void timer_cb()
@@ -94,6 +111,73 @@ void lv_create_global_styles()
   clear_paddings(lv_scr_act());
 }
 
+void IRAM_ATTR readEncoderISR()
+{
+  rotaryEncoder.readEncoder_ISR();
+}
+
+void change_screens(int value)
+{
+  rotaryEncoder.setEncoderValue(0);
+
+  current_screen = static_cast<Screen>((static_cast<int>(current_screen) + value) % static_cast<int>(Screen::COUNT));
+
+  if (static_cast<int>(current_screen) < 0)
+  {
+    current_screen = Screen::CALENDAR;
+  }
+
+  // Use the map to load the screen
+  auto it = screen_map.find(current_screen);
+  if (it != screen_map.end() && *(it->second) != nullptr)
+  {
+    lv_scr_load(*(it->second));
+  }
+  else
+  {
+    // Handle unexpected case
+    current_screen = Screen::CLOCK;
+    lv_scr_load(clock_screen);
+  }
+}
+void rotary_loop()
+{
+
+  // dont print anything unless value changed
+  if (rotaryEncoder.encoderChanged())
+  {
+
+    if (lastEncoderValue > rotaryEncoder.readEncoder())
+    {
+      // turned clockwise
+      Serial.println("clockwise ");
+      DIRECTION_CW_SELECTED = true;
+      DIRECTION_CCW_SELECTED = false;
+    }
+    else
+    {
+      Serial.println("counter clockwise ");
+      // turned counter-clockwise
+      DIRECTION_CW_SELECTED = false;
+      DIRECTION_CCW_SELECTED = true;
+    }
+    lastEncoderValue = rotaryEncoder.readEncoder();
+  }
+  else
+  {
+    lastEncoderValue = rotaryEncoder.readEncoder();
+  }
+  if (rotaryEncoder.isEncoderButtonClicked())
+  {
+    static unsigned long lastTimePressed = 0; // Soft debouncing
+    if (millis() - lastTimePressed < 500)
+    {
+      return;
+    }
+    Serial.print("button pressed ");
+  }
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -105,6 +189,12 @@ void setup()
     delay(500);
   }
   client.setCACert(spotify_server_cert);
+  if (!SPIFFS.begin(true))
+  {
+    Serial.println("SPIFFS initialisation failed!");
+    while (1)
+      yield(); // Stay here twiddling thumbs waiting
+  }
   // Start LVGL
   lv_init();
   init_colors();
@@ -120,6 +210,7 @@ void setup()
   create_screen_clock();
   create_calendar_screen();
   create_loading_screen();
+  create_spotify_screen();
   pinMode(BUTTON_PIN_NEXT, INPUT_PULLUP);
   pinMode(BUTTON_PIN_PREV, INPUT_PULLUP);
 
@@ -127,34 +218,15 @@ void setup()
 
   // Initialize fetchTime so loading screen shows for a while
   fetchTime = millis() + LOADING_SCREEN_DURATION; // Show loading screen for 10 seconds
-}
-void change_screens(int value)
-{
 
-  current_screen = static_cast<Screen>((static_cast<int>(current_screen) + value) % static_cast<int>(Screen::COUNT));
+  // we must initialize rotary encoder
+  rotaryEncoder.begin();
+  rotaryEncoder.setup(readEncoderISR);
 
-  if (static_cast<int>(current_screen) < 0)
-  {
-    current_screen = Screen::CALENDAR;
-  }
+  rotaryEncoder.setBoundaries(-5000000, 5000000, true);
+  rotaryEncoder.setEncoderValue(lastEncoderValue);
 
-  switch (current_screen)
-  {
-  case Screen::CLOCK:
-    lv_scr_load(clock_screen);
-    break;
-  case Screen::WEATHER:
-    lv_scr_load(weather_screen);
-    break;
-  case Screen::CALENDAR:
-    lv_scr_load(calendar_screen);
-    break;
-  default:
-    // Handle unexpected case
-    current_screen = Screen::CLOCK;
-    lv_scr_load(clock_screen);
-    break;
-  }
+  rotaryEncoder.disableAcceleration();
 }
 
 void loop()
@@ -165,6 +237,15 @@ void loop()
   timer_cb();
 
   yield(); // Let system tasks run after LVGL operations
+
+  if (current_screen == Screen::SPOTIFY)
+  {
+    delayBetweenRequests = 5000; // Update every 5 seconds when on Spotify screen
+  }
+  else
+  {
+    delayBetweenRequests = 500000; // Update every 500 seconds when not on Spotify screen
+  }
 
   unsigned long msec = millis();
   if (msec >= fetchTime)
@@ -179,7 +260,7 @@ void loop()
 
     if (isFirstBoot)
     {
-      lv_scr_load(clock_screen);
+      lv_screen_load(*(screen_map.find(current_screen)->second));
       isFirstBoot = false;
     }
 
@@ -204,14 +285,14 @@ void loop()
   }
   if (millis() > requestDueTime)
   {
-    int status = spotify.getCurrentlyPlaying(printCurrentlyPlayingToSerial);
+    int status = spotify.getCurrentlyPlaying(show_currently_playing);
     if (status == 200)
     {
       // all good
     }
     else if (status == 204)
     {
-      Serial.println("Doesn't seem to be anything playing");
+      show_empty_spotify_screen();
     }
     else
     {
@@ -220,6 +301,10 @@ void loop()
     }
     requestDueTime = millis() + delayBetweenRequests;
   }
+
+  yield(); // Let system tasks run before reading rotary encoder
+  rotary_loop();
+  delay(50); // or do whatever you need to do...
 
   yield(); // Final yield at end of loop
 }

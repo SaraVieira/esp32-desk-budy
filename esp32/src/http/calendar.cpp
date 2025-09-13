@@ -45,7 +45,7 @@ void get_calendar()
         HTTPClient http;
         http.setConnectTimeout(50000000);
         http.setTimeout(50000);
-        String url = String("https://deskbuddy.deploy.iamsaravieira.com/events");
+        String url = String("https://deskbuddy.deploy.iamsaravieira.com/events-test");
         http.begin(url);
         int httpCode = http.GET();
 

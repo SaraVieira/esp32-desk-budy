@@ -1,96 +1,109 @@
+
 #include <lvgl.h>
 #include <TFT_eSPI.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <SpotifyArduino.h>
+
+#include "types.h"
 #include "secrets.h"
+#include "../../styles/styles.h"
+#include "../../images/images.h"
 
-void printCurrentlyPlayingToSerial(CurrentlyPlaying currentlyPlaying)
+// so we can store the song name and artist name
+char *songName;
+char *songArtist;
+
+extern lv_obj_t *spotify_screen;
+static lv_obj_t *container;
+static lv_obj_t *img;
+extern WiFiClientSecure client;
+extern SpotifyArduino spotify;
+extern const char *spotify_image_server_cert;
+extern const char *spotify_server_cert;
+static lv_obj_t *track_name;
+static lv_obj_t *artist_label;
+static lv_obj_t *progress_bar;
+
+void create_spotify_screen()
 {
-    // Use the details in this method or if you want to store them
-    // make sure you copy them (using something like strncpy)
-    // const char* artist =
+    // init style
+    static lv_style_t no_border_style;
+    lv_style_init(&no_border_style);
+    lv_style_set_border_width(&no_border_style, 0);
+    lv_style_set_radius(&no_border_style, 0);
+    lv_style_set_text_font(&no_border_style, &teletext_24);
 
-    Serial.println("--------- Currently Playing ---------");
+    // container
+    spotify_screen = lv_obj_create(NULL);
 
-    Serial.print("Is Playing: ");
-    if (currentlyPlaying.isPlaying)
+    container = lv_obj_create(spotify_screen);
+    lv_obj_set_size(container, lv_pct(100), lv_pct(100));
+    lv_obj_align(container, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN);
+    align_center_x_y(container);
+    clear_paddings(container);
+    lv_obj_add_style(container, &no_border_style, 0);
+    lv_obj_set_style_bg_color(container, black, LV_PART_MAIN);
+
+    track_name = lv_label_create(container);
+    lv_obj_set_style_text_color(track_name, white, LV_PART_MAIN);
+
+    lv_obj_set_style_text_font(track_name, &teletext_24, LV_PART_MAIN);
+    static lv_style_t style_bg;
+    static lv_style_t style_indic;
+
+    lv_style_init(&style_bg);
+    lv_style_set_border_color(&style_bg, blue);
+    lv_style_set_border_width(&style_bg, 2);
+    lv_style_set_pad_all(&style_bg, 8); /*To make the indicator smaller*/
+    lv_style_set_anim_duration(&style_bg, 1000);
+
+    lv_style_init(&style_indic);
+    lv_style_set_bg_opa(&style_indic, LV_OPA_COVER);
+    lv_style_set_bg_color(&style_indic, white);
+
+    progress_bar = lv_bar_create(container);
+    lv_obj_remove_style_all(progress_bar);
+    lv_obj_add_style(progress_bar, &style_bg, 0);
+    lv_obj_add_style(progress_bar, &style_indic, LV_PART_INDICATOR);
+
+    lv_obj_set_size(progress_bar, 300, 20);
+    lv_obj_center(progress_bar);
+
+    artist_label = lv_label_create(container);
+    lv_obj_set_style_text_color(artist_label, white, LV_PART_MAIN);
+    lv_obj_set_style_text_font(artist_label, &teletext_14, LV_PART_MAIN);
+}
+
+void show_empty_spotify_screen()
+{
+    lv_obj_add_flag(artist_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
+    lv_label_set_text(track_name, "Nothing's playing");
+    lv_obj_set_style_text_font(track_name, &teletext_24, LV_PART_MAIN);
+}
+
+void show_currently_playing(CurrentlyPlaying currentlyPlaying)
+{
+
+    if (lv_obj_has_flag(artist_label, LV_OBJ_FLAG_HIDDEN))
     {
-        Serial.println("Yes");
+        lv_obj_clear_flag(artist_label, LV_OBJ_FLAG_HIDDEN);
     }
-    else
+    if (lv_obj_has_flag(progress_bar, LV_OBJ_FLAG_HIDDEN))
     {
-        Serial.println("No");
+        lv_obj_clear_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
     }
 
-    Serial.print("Track: ");
-    Serial.println(currentlyPlaying.trackName);
-    Serial.print("Track URI: ");
-    Serial.println(currentlyPlaying.trackUri);
-    Serial.println();
-
-    Serial.println("Artists: ");
+    lv_label_set_text(track_name, currentlyPlaying.trackName);
     for (int i = 0; i < currentlyPlaying.numArtists; i++)
     {
-        Serial.print("Name: ");
-        Serial.println(currentlyPlaying.artists[i].artistName);
-        Serial.print("Artist URI: ");
-        Serial.println(currentlyPlaying.artists[i].artistUri);
-        Serial.println();
+
+        lv_label_set_text(artist_label, currentlyPlaying.artists[i].artistName);
     }
 
-    Serial.print("Album: ");
-    Serial.println(currentlyPlaying.albumName);
-    Serial.print("Album URI: ");
-    Serial.println(currentlyPlaying.albumUri);
-    Serial.println();
-
-    if (currentlyPlaying.contextUri != NULL)
-    {
-        Serial.print("Context URI: ");
-        Serial.println(currentlyPlaying.contextUri);
-        Serial.println();
-    }
-
-    long progress = currentlyPlaying.progressMs; // duration passed in the song
-    long duration = currentlyPlaying.durationMs; // Length of Song
-    Serial.print("Elapsed time of song (ms): ");
-    Serial.print(progress);
-    Serial.print(" of ");
-    Serial.println(duration);
-    Serial.println();
-
-    float percentage = ((float)progress / (float)duration) * 100;
-    int clampedPercentage = (int)percentage;
-    Serial.print("<");
-    for (int j = 0; j < 50; j++)
-    {
-        if (clampedPercentage >= (j * 2))
-        {
-            Serial.print("=");
-        }
-        else
-        {
-            Serial.print("-");
-        }
-    }
-    Serial.println(">");
-    Serial.println();
-
-    // will be in order of widest to narrowest
-    // currentlyPlaying.numImages is the number of images that
-    // are stored
-    for (int i = 0; i < currentlyPlaying.numImages; i++)
-    {
-        Serial.println("------------------------");
-        Serial.print("Album Image: ");
-        Serial.println(currentlyPlaying.albumImages[i].url);
-        Serial.print("Dimensions: ");
-        Serial.print(currentlyPlaying.albumImages[i].width);
-        Serial.print(" x ");
-        Serial.print(currentlyPlaying.albumImages[i].height);
-        Serial.println();
-    }
-    Serial.println("------------------------");
+    float percentage = ((float)currentlyPlaying.progressMs / (float)currentlyPlaying.durationMs) * 100;
+    lv_bar_set_value(progress_bar, percentage, LV_ANIM_ON);
 }

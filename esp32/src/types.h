@@ -1,8 +1,11 @@
+
+#include <SpotifyArduino.h>
+
 #ifndef TYPES_H
 #define TYPES_H
 
 #include <lvgl.h>
-
+extern SpotifyArduino spotify;
 void change_screens(int value);
 
 enum class Screen : int
@@ -10,7 +13,8 @@ enum class Screen : int
     CLOCK = 0,
     WEATHER = 1,
     CALENDAR = 2,
-    COUNT = 3 // Useful for bounds checking
+    SPOTIFY = 3,
+    COUNT = 4 // Useful for bounds checking
 };
 extern Screen current_screen;
 // Structure to group time display elements
@@ -44,4 +48,11 @@ struct WeatherDisplay
 extern TimeDisplay time_display;
 extern WeatherDisplay weather_display;
 
+#define ROTARY_ENCODER_A_PIN 23
+#define ROTARY_ENCODER_B_PIN 22
+#define ROTARY_ENCODER_BUTTON_PIN 26
+#define ROTARY_ENCODER_VCC_PIN -1
+#define ROTARY_ENCODER_STEPS 4
+
 #endif // TYPES_H
+
