@@ -38,6 +38,11 @@ LV_IMAGE_DECLARE(loading4);
 LV_IMAGE_DECLARE(loading2);
 LV_IMAGE_DECLARE(loading3);
 
+LV_IMAGE_DECLARE(play);
+LV_IMAGE_DECLARE(pause_icon);
+LV_IMAGE_DECLARE(next);
+LV_IMAGE_DECLARE(prev);
+
 void create_image_from_number(lv_obj_t *parent, int32_t number)
 {
   switch (number)

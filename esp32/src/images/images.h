@@ -42,6 +42,11 @@ extern "C"
     extern const lv_img_dsc_t loading3;
     extern const lv_img_dsc_t loading4;
 
+    extern const lv_img_dsc_t play;
+    extern const lv_img_dsc_t pause_icon;
+    extern const lv_img_dsc_t next;
+    extern const lv_img_dsc_t prev;
+
     void create_image_from_number(lv_obj_t *parent, int32_t number);
     void create_image_from_wmo_code(lv_obj_t *parent, int32_t code, bool is_night);
 
