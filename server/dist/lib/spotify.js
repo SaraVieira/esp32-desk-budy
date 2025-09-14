@@ -36,6 +36,8 @@ async function getSpotifyPlayer() {
                 song: data.item.name,
                 percentage: data.progress_ms && data.item.duration_ms ? Math.round((data.progress_ms / data.item.duration_ms) * 100) : 0,
             };
+        }).catch(() => {
+            return { closed: true };
         });
     });
 }

@@ -2,6 +2,7 @@
 #include "../styles/styles.h"
 #include "../types.h"
 #include <Arduino.h>
+#include <map>
 
 // Microphone configuration
 const int sampleWindow = 50;
@@ -11,9 +12,7 @@ unsigned int sample;
 
 // Global objects (defined in main.cpp)
 extern Screen current_screen;
-extern lv_obj_t *clock_screen;
-extern lv_obj_t *weather_screen;
-extern lv_obj_t *calendar_screen;
+extern std::map<Screen, lv_obj_t **> screen_map;
 
 void read_mic()
 {
@@ -83,19 +82,12 @@ void read_mic()
             lv_obj_del(loud_container);
             loud_container = NULL;
 
-            // Return to the previous screen
+            // Return to the previous screen using the map
             current_screen = previous_screen;
-            switch (current_screen)
+            auto it = screen_map.find(current_screen);
+            if (it != screen_map.end() && *(it->second) != nullptr)
             {
-            case Screen::CLOCK:
-                lv_scr_load(clock_screen);
-                break;
-            case Screen::WEATHER:
-                lv_scr_load(weather_screen);
-                break;
-            case Screen::CALENDAR:
-                lv_scr_load(calendar_screen);
-                break;
+                lv_scr_load(*(it->second));
             }
         }
     }

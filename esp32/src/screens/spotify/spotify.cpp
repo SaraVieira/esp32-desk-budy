@@ -4,10 +4,10 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <SpotifyArduino.h>
 
 #include "types.h"
 #include "secrets.h"
+#include "http/spotify.h"
 #include "../../styles/styles.h"
 #include "../../images/images.h"
 
@@ -18,7 +18,6 @@ char *songArtist;
 extern lv_obj_t *spotify_screen;
 static lv_obj_t *container;
 static lv_obj_t *img;
-extern SpotifyArduino spotify;
 static lv_obj_t *track_name;
 static lv_obj_t *artist_label;
 static lv_obj_t *progress_bar;
@@ -69,6 +68,7 @@ void create_spotify_screen()
     lv_obj_remove_style_all(progress_bar);
     lv_obj_add_style(progress_bar, &style_bg, 0);
     lv_obj_add_style(progress_bar, &style_indic, LV_PART_INDICATOR);
+    lv_obj_set_style_margin_hor(progress_bar, 30, LV_PART_MAIN);
 
     lv_obj_set_size(progress_bar, 300, 20);
     lv_obj_center(progress_bar);
@@ -112,7 +112,7 @@ void create_spotify_screen()
     lv_obj_center(next_img);
 }
 
-void handle_hidden_toggles(boolean isPlaying = true)
+void handle_hidden_toggles(boolean is_playing = true)
 {
     if (lv_obj_has_flag(next_img, LV_OBJ_FLAG_HIDDEN))
         lv_obj_clear_flag(next_img, LV_OBJ_FLAG_HIDDEN);
@@ -128,7 +128,7 @@ void handle_hidden_toggles(boolean isPlaying = true)
         lv_obj_clear_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
     }
 
-    if (isPlaying)
+    if (is_playing)
     {
         lv_obj_clear_flag(pause_img, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(play_img, LV_OBJ_FLAG_HIDDEN);
@@ -150,37 +150,64 @@ void show_empty_spotify_screen()
     lv_obj_set_style_text_font(track_name, &teletext_22, LV_PART_MAIN);
 }
 
-void show_currently_playing(CurrentlyPlaying currentlyPlaying)
+void show_currently_playing(void)
 {
-    handle_hidden_toggles(currentlyPlaying.isPlaying);
-
-    lv_label_set_text(track_name, currentlyPlaying.trackName);
-    for (int i = 0; i < currentlyPlaying.numArtists; i++)
+    JsonDocument currentlyPlaying = get_spotify_status();
+    if (currentlyPlaying["is_playing"] == false)
     {
-
-        lv_label_set_text(artist_label, currentlyPlaying.artists[i].artistName);
+        show_empty_spotify_screen();
+        return;
     }
 
-    float percentage = ((float)currentlyPlaying.progressMs / (float)currentlyPlaying.durationMs) * 100;
-    lv_bar_set_value(progress_bar, percentage, LV_ANIM_OFF);
-}
+    handle_hidden_toggles(currentlyPlaying["is_playing"]);
 
-void toggle_playback(PlayerDetails details)
-{
-    Serial.println("Toggling playback");
-    if (details.isPlaying)
-    {
-        spotify.pause(details.device.id);
-    }
-    else
-    {
-        spotify.play(details.device.id);
-    }
-    // spotify.getCurrentlyPlaying(show_currently_playing);
+    lv_label_set_text(track_name, currentlyPlaying["song"]);
+    lv_label_set_text(artist_label, currentlyPlaying["artists"]);
+
+    lv_bar_set_value(progress_bar, currentlyPlaying["percentage"], LV_ANIM_OFF);
 }
 
 void on_rotary_clicked()
 {
+    JsonDocument details = get_spotify_status();
+    JsonDocument currentlyPlaying;
 
-    spotify.getPlayerDetails(toggle_playback);
+    if (details["is_playing"])
+    {
+        currentlyPlaying = spotify_pause();
+    }
+    else
+    {
+        currentlyPlaying = spotify_play();
+    }
+    handle_hidden_toggles(currentlyPlaying["is_playing"]);
+
+    lv_label_set_text(track_name, currentlyPlaying["song"]);
+    lv_label_set_text(artist_label, currentlyPlaying["artists"]);
+
+    lv_bar_set_value(progress_bar, currentlyPlaying["percentage"], LV_ANIM_OFF);
+}
+
+void on_clockwise()
+{
+
+    JsonDocument currentlyPlaying = spotify_next();
+    handle_hidden_toggles(currentlyPlaying["is_playing"]);
+
+    lv_label_set_text(track_name, currentlyPlaying["song"]);
+    lv_label_set_text(artist_label, currentlyPlaying["artists"]);
+
+    lv_bar_set_value(progress_bar, currentlyPlaying["percentage"], LV_ANIM_OFF);
+}
+
+void on_counter_clockwise()
+{
+
+    JsonDocument currentlyPlaying = spotify_previous();
+    handle_hidden_toggles(currentlyPlaying["is_playing"]);
+
+    lv_label_set_text(track_name, currentlyPlaying["song"]);
+    lv_label_set_text(artist_label, currentlyPlaying["artists"]);
+
+    lv_bar_set_value(progress_bar, currentlyPlaying["percentage"], LV_ANIM_OFF);
 }

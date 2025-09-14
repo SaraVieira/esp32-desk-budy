@@ -56,7 +56,7 @@ export type MessageResponseNews = {
 }
 
 export type SpotifyPlayerRsp = {
-  device: {
+  device?: {
     id: string
     is_active: boolean
     is_restricted: boolean
@@ -64,10 +64,11 @@ export type SpotifyPlayerRsp = {
     type: string
     volume_percent: number
   }
-  is_playing: boolean
-  progress_ms: number
-  duration_ms: number
-  artists: string
-  song: string
-  percentage: number
+  is_playing?: boolean
+  progress_ms?: number
+  duration_ms?: number
+  artists?: string
+  song?: string
+  percentage?: number
+  closed?: boolean
 }

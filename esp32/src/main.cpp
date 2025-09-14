@@ -14,8 +14,6 @@
 #include "screens/clock/clock.h"
 #include "screens/spotify/spotify.h"
 #include "mic/mic.h"
-#include <SpotifyArduino.h>
-#include <SpotifyArduinoCert.h>
 #include "secrets.h"
 #include "types.h"
 #include "config.h"
@@ -30,11 +28,9 @@ bool DIRECTION_CW_SELECTED = false; // true means clockwise increases values
 bool DIRECTION_CCW_SELECTED = false;
 int32_t lastEncoderValue = 0;
 
-WiFiClientSecure client;
 // Create instances
 TimeDisplay time_display = {0};
 WeatherDisplay weather_display = {0};
-SpotifyArduino spotify(client, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REFRESH_TOKEN);
 uint32_t draw_buf[DRAW_BUF_SIZE / 4];
 
 // Variables will change:
@@ -95,9 +91,7 @@ static void timer_cb()
       }
     }
 
-    if (current_screen == Screen::CLOCK)
-    {
-      // Update the clock display only if the current screen is CLOCK
+       // Update the clock display only if the current screen is CLOCK
       create_image_from_number(time_display.hour_1, time_display.hour / 10);
       create_image_from_number(time_display.hour_2, time_display.hour % 10);
       create_image_from_number(time_display.minute_1, time_display.minute / 10);
@@ -105,7 +99,6 @@ static void timer_cb()
       create_image_from_number(time_display.second_1, time_display.second / 10);
       create_image_from_number(time_display.second_2, time_display.second % 10);
     }
-  }
 }
 
 void lv_create_global_styles()
@@ -151,6 +144,10 @@ void change_screens(int value)
 
       if (lastEncoderValue > rotaryEncoder.readEncoder())
       {
+        if (current_screen == Screen::SPOTIFY)
+        {
+          on_clockwise();
+        }
         // turned clockwise
         Serial.println("clockwise ");
         DIRECTION_CW_SELECTED = true;
@@ -158,6 +155,10 @@ void change_screens(int value)
       }
       else
       {
+        if (current_screen == Screen::SPOTIFY)
+        {
+          on_counter_clockwise();
+        }
         Serial.println("counter clockwise ");
         // turned counter-clockwise
         DIRECTION_CW_SELECTED = false;
@@ -193,8 +194,6 @@ void change_screens(int value)
     {
       delay(500);
     }
-    // client.setCACert(spotify_server_cert);
-    client.setInsecure(); // Not secure, but works for now
     // Start LVGL
     lv_init();
     init_colors();
@@ -285,20 +284,8 @@ void change_screens(int value)
     }
     if (millis() > requestDueTime)
     {
-      int status = spotify.getCurrentlyPlaying(show_currently_playing);
-      if (status == 200)
-      {
-        // all good
-      }
-      else if (status == 204)
-      {
-        show_empty_spotify_screen();
-      }
-      else
-      {
-        Serial.print("Error: ");
-        Serial.println(status);
-      }
+      show_currently_playing();
+
       requestDueTime = millis() + delayBetweenRequests;
     }
 

@@ -1,11 +1,8 @@
 
-#include <SpotifyArduino.h>
-
 #ifndef TYPES_H
 #define TYPES_H
 
 #include <lvgl.h>
-extern SpotifyArduino spotify;
 void change_screens(int value);
 
 enum class Screen : int
@@ -55,4 +52,3 @@ extern WeatherDisplay weather_display;
 #define ROTARY_ENCODER_STEPS 4
 
 #endif // TYPES_H
-
