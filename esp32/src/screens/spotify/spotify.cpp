@@ -64,49 +64,47 @@ void create_spotify_screen()
     lv_style_set_bg_opa(&style_indic, LV_OPA_COVER);
     lv_style_set_bg_color(&style_indic, white);
 
+    artist_label = lv_label_create(container);
+    lv_obj_set_style_text_color(artist_label, white, LV_PART_MAIN);
+    lv_obj_set_style_text_font(artist_label, &teletext_14, LV_PART_MAIN);
+    lv_obj_set_style_margin_top(artist_label, 5, LV_PART_MAIN);
+
     progress_bar = lv_bar_create(container);
     lv_obj_remove_style_all(progress_bar);
     lv_obj_add_style(progress_bar, &style_bg, 0);
     lv_obj_add_style(progress_bar, &style_indic, LV_PART_INDICATOR);
-    lv_obj_set_style_margin_hor(progress_bar, 30, LV_PART_MAIN);
+    lv_obj_set_style_margin_top(progress_bar, 5, LV_PART_MAIN);
+    lv_obj_set_style_margin_bottom(progress_bar, 5, LV_PART_MAIN);
 
     lv_obj_set_size(progress_bar, 300, 20);
     lv_obj_center(progress_bar);
-
-    artist_label = lv_label_create(container);
-    lv_obj_set_style_text_color(artist_label, white, LV_PART_MAIN);
-    lv_obj_set_style_text_font(artist_label, &teletext_14, LV_PART_MAIN);
 
     lv_obj_t *controls = lv_obj_create(container);
     lv_obj_set_style_bg_color(controls, black, LV_PART_MAIN);
     lv_obj_set_flex_flow(controls, LV_FLEX_FLOW_ROW);
     align_center_x_y(controls);
     clear_paddings(controls);
-    lv_obj_set_size(controls, lv_pct(100), 50);
+    lv_obj_set_size(controls, lv_pct(100), 32);
     lv_obj_add_style(controls, &no_border_style, 0);
 
     prev_img = lv_image_create(controls);
-    lv_obj_add_flag(prev_img, LV_OBJ_FLAG_CLICKABLE);
     lv_image_set_src(prev_img, &prev);
     lv_obj_set_size(prev_img, 32, 32);
     lv_obj_center(prev_img);
 
     play_img = lv_image_create(controls);
     lv_image_set_src(play_img, &play);
-    lv_obj_add_flag(play_img, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_size(play_img, 32, 32);
     lv_obj_center(play_img);
     lv_obj_add_flag(play_img, LV_OBJ_FLAG_HIDDEN);
 
     pause_img = lv_image_create(controls);
     lv_image_set_src(pause_img, &pause_icon);
-    lv_obj_add_flag(pause_img, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_size(pause_img, 32, 32);
     lv_obj_center(pause_img);
     lv_obj_add_flag(pause_img, LV_OBJ_FLAG_HIDDEN);
 
     next_img = lv_image_create(controls);
-    lv_obj_add_flag(next_img, LV_OBJ_FLAG_CLICKABLE);
     lv_image_set_src(next_img, &next);
     lv_obj_set_size(next_img, 32, 32);
     lv_obj_center(next_img);
@@ -146,6 +144,8 @@ void show_empty_spotify_screen()
     lv_obj_add_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(next_img, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(prev_img, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(play_img, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(pause_img, LV_OBJ_FLAG_HIDDEN);
     lv_label_set_text(track_name, "Nothing's playing");
     lv_obj_set_style_text_font(track_name, &teletext_22, LV_PART_MAIN);
 }
@@ -153,7 +153,7 @@ void show_empty_spotify_screen()
 void show_currently_playing(void)
 {
     JsonDocument currentlyPlaying = get_spotify_status();
-    if (currentlyPlaying["is_playing"] == false)
+    if (currentlyPlaying["closed"])
     {
         show_empty_spotify_screen();
         return;

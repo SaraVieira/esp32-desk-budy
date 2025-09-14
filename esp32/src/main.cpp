@@ -40,7 +40,7 @@ int nextButtonCurrentState;
 int prevButtonPrevState = LOW;
 int prevButtonCurrentState;
 
-Screen current_screen = Screen::SPOTIFY;
+Screen current_screen = Screen::CLOCK;
 
 // screens
 lv_obj_t *clock_screen;
