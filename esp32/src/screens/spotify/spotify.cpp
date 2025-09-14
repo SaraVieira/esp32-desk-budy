@@ -18,15 +18,14 @@ char *songArtist;
 extern lv_obj_t *spotify_screen;
 static lv_obj_t *container;
 static lv_obj_t *img;
-extern WiFiClientSecure client;
 extern SpotifyArduino spotify;
-extern const char *spotify_image_server_cert;
-extern const char *spotify_server_cert;
 static lv_obj_t *track_name;
 static lv_obj_t *artist_label;
 static lv_obj_t *progress_bar;
 static lv_obj_t *play_img;
 static lv_obj_t *pause_img;
+static lv_obj_t *next_img;
+static lv_obj_t *prev_img;
 
 void create_spotify_screen()
 {
@@ -52,7 +51,7 @@ void create_spotify_screen()
     track_name = lv_label_create(container);
     lv_obj_set_style_text_color(track_name, white, LV_PART_MAIN);
 
-    lv_obj_set_style_text_font(track_name, &teletext_24, LV_PART_MAIN);
+    lv_obj_set_style_text_font(track_name, &teletext_14, LV_PART_MAIN);
     static lv_style_t style_bg;
     static lv_style_t style_indic;
 
@@ -79,46 +78,46 @@ void create_spotify_screen()
     lv_obj_set_style_text_font(artist_label, &teletext_14, LV_PART_MAIN);
 
     lv_obj_t *controls = lv_obj_create(container);
-    lv_obj_set_style_bg_color(controls, white, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(controls, black, LV_PART_MAIN);
     lv_obj_set_flex_flow(controls, LV_FLEX_FLOW_ROW);
     align_center_x_y(controls);
     clear_paddings(controls);
     lv_obj_set_size(controls, lv_pct(100), 50);
     lv_obj_add_style(controls, &no_border_style, 0);
 
-    lv_obj_t *prev_img = lv_image_create(controls);
+    prev_img = lv_image_create(controls);
+    lv_obj_add_flag(prev_img, LV_OBJ_FLAG_CLICKABLE);
     lv_image_set_src(prev_img, &prev);
     lv_obj_set_size(prev_img, 32, 32);
     lv_obj_center(prev_img);
 
     play_img = lv_image_create(controls);
     lv_image_set_src(play_img, &play);
+    lv_obj_add_flag(play_img, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_size(play_img, 32, 32);
     lv_obj_center(play_img);
     lv_obj_add_flag(play_img, LV_OBJ_FLAG_HIDDEN);
 
     pause_img = lv_image_create(controls);
     lv_image_set_src(pause_img, &pause_icon);
+    lv_obj_add_flag(pause_img, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_size(pause_img, 32, 32);
     lv_obj_center(pause_img);
     lv_obj_add_flag(pause_img, LV_OBJ_FLAG_HIDDEN);
 
-    lv_obj_t *next_img = lv_image_create(controls);
+    next_img = lv_image_create(controls);
+    lv_obj_add_flag(next_img, LV_OBJ_FLAG_CLICKABLE);
     lv_image_set_src(next_img, &next);
     lv_obj_set_size(next_img, 32, 32);
     lv_obj_center(next_img);
 }
 
-void show_empty_spotify_screen()
+void handle_hidden_toggles(boolean isPlaying = true)
 {
-    lv_obj_add_flag(artist_label, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
-    lv_label_set_text(track_name, "Nothing's playing");
-    lv_obj_set_style_text_font(track_name, &teletext_24, LV_PART_MAIN);
-}
-
-void show_currently_playing(CurrentlyPlaying currentlyPlaying)
-{
+    if (lv_obj_has_flag(next_img, LV_OBJ_FLAG_HIDDEN))
+        lv_obj_clear_flag(next_img, LV_OBJ_FLAG_HIDDEN);
+    if (lv_obj_has_flag(prev_img, LV_OBJ_FLAG_HIDDEN))
+        lv_obj_clear_flag(prev_img, LV_OBJ_FLAG_HIDDEN);
 
     if (lv_obj_has_flag(artist_label, LV_OBJ_FLAG_HIDDEN))
     {
@@ -129,7 +128,7 @@ void show_currently_playing(CurrentlyPlaying currentlyPlaying)
         lv_obj_clear_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
     }
 
-    if (currentlyPlaying.isPlaying)
+    if (isPlaying)
     {
         lv_obj_clear_flag(pause_img, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(play_img, LV_OBJ_FLAG_HIDDEN);
@@ -139,6 +138,21 @@ void show_currently_playing(CurrentlyPlaying currentlyPlaying)
         lv_obj_clear_flag(play_img, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(pause_img, LV_OBJ_FLAG_HIDDEN);
     }
+}
+
+void show_empty_spotify_screen()
+{
+    lv_obj_add_flag(artist_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(next_img, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(prev_img, LV_OBJ_FLAG_HIDDEN);
+    lv_label_set_text(track_name, "Nothing's playing");
+    lv_obj_set_style_text_font(track_name, &teletext_22, LV_PART_MAIN);
+}
+
+void show_currently_playing(CurrentlyPlaying currentlyPlaying)
+{
+    handle_hidden_toggles(currentlyPlaying.isPlaying);
 
     lv_label_set_text(track_name, currentlyPlaying.trackName);
     for (int i = 0; i < currentlyPlaying.numArtists; i++)
@@ -148,5 +162,25 @@ void show_currently_playing(CurrentlyPlaying currentlyPlaying)
     }
 
     float percentage = ((float)currentlyPlaying.progressMs / (float)currentlyPlaying.durationMs) * 100;
-    lv_bar_set_value(progress_bar, percentage, LV_ANIM_ON);
+    lv_bar_set_value(progress_bar, percentage, LV_ANIM_OFF);
+}
+
+void toggle_playback(PlayerDetails details)
+{
+    Serial.println("Toggling playback");
+    if (details.isPlaying)
+    {
+        spotify.pause(details.device.id);
+    }
+    else
+    {
+        spotify.play(details.device.id);
+    }
+    // spotify.getCurrentlyPlaying(show_currently_playing);
+}
+
+void on_rotary_clicked()
+{
+
+    spotify.getPlayerDetails(toggle_playback);
 }

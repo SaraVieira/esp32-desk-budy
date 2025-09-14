@@ -1,6 +1,7 @@
 #include "weather_time.h"
 #include "../images/images.h"
 #include "../styles/styles.h"
+#include "secrets.h"
 
 void get_current_time_and_weather()
 {
@@ -9,7 +10,7 @@ void get_current_time_and_weather()
         HTTPClient http;
         http.setConnectTimeout(50000000);
         http.setTimeout(50000);
-        String url = String("https://deskbuddy.deploy.iamsaravieira.com/");
+        String url = String(API_URL);
         http.begin(url);
         int httpCode = http.GET();
 

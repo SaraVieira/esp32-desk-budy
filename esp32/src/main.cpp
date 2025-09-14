@@ -1,4 +1,3 @@
-#include "SPIFFS.h"
 #include <lvgl.h>
 #include <TFT_eSPI.h>
 #include <WiFi.h>
@@ -25,7 +24,6 @@
 unsigned long fetchTime;
 static bool isFirstBoot = true;
 
-// instead of changing here, rather change numbers above
 AiEsp32RotaryEncoder rotaryEncoder = AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, ROTARY_ENCODER_VCC_PIN, ROTARY_ENCODER_STEPS);
 
 bool DIRECTION_CW_SELECTED = false; // true means clockwise increases values
@@ -97,12 +95,16 @@ static void timer_cb()
       }
     }
 
-    create_image_from_number(time_display.hour_1, time_display.hour / 10);
-    create_image_from_number(time_display.hour_2, time_display.hour % 10);
-    create_image_from_number(time_display.minute_1, time_display.minute / 10);
-    create_image_from_number(time_display.minute_2, time_display.minute % 10);
-    create_image_from_number(time_display.second_1, time_display.second / 10);
-    create_image_from_number(time_display.second_2, time_display.second % 10);
+    if (current_screen == Screen::CLOCK)
+    {
+      // Update the clock display only if the current screen is CLOCK
+      create_image_from_number(time_display.hour_1, time_display.hour / 10);
+      create_image_from_number(time_display.hour_2, time_display.hour % 10);
+      create_image_from_number(time_display.minute_1, time_display.minute / 10);
+      create_image_from_number(time_display.minute_2, time_display.minute % 10);
+      create_image_from_number(time_display.second_1, time_display.second / 10);
+      create_image_from_number(time_display.second_2, time_display.second % 10);
+    }
   }
 }
 
@@ -140,171 +142,169 @@ void change_screens(int value)
     lv_scr_load(clock_screen);
   }
 }
-void rotary_loop()
-{
-
-  // dont print anything unless value changed
-  if (rotaryEncoder.encoderChanged())
+  void rotary_loop()
   {
 
-    if (lastEncoderValue > rotaryEncoder.readEncoder())
+    // dont print anything unless value changed
+    if (rotaryEncoder.encoderChanged())
     {
-      // turned clockwise
-      Serial.println("clockwise ");
-      DIRECTION_CW_SELECTED = true;
-      DIRECTION_CCW_SELECTED = false;
+
+      if (lastEncoderValue > rotaryEncoder.readEncoder())
+      {
+        // turned clockwise
+        Serial.println("clockwise ");
+        DIRECTION_CW_SELECTED = true;
+        DIRECTION_CCW_SELECTED = false;
+      }
+      else
+      {
+        Serial.println("counter clockwise ");
+        // turned counter-clockwise
+        DIRECTION_CW_SELECTED = false;
+        DIRECTION_CCW_SELECTED = true;
+      }
+      lastEncoderValue = rotaryEncoder.readEncoder();
     }
     else
     {
-      Serial.println("counter clockwise ");
-      // turned counter-clockwise
-      DIRECTION_CW_SELECTED = false;
-      DIRECTION_CCW_SELECTED = true;
+      lastEncoderValue = rotaryEncoder.readEncoder();
     }
-    lastEncoderValue = rotaryEncoder.readEncoder();
-  }
-  else
-  {
-    lastEncoderValue = rotaryEncoder.readEncoder();
-  }
-  if (rotaryEncoder.isEncoderButtonClicked())
-  {
-    static unsigned long lastTimePressed = 0; // Soft debouncing
-    if (millis() - lastTimePressed < 500)
+    if (rotaryEncoder.isEncoderButtonClicked())
     {
-      return;
+      static unsigned long lastTimePressed = 0; // Soft debouncing
+      if (millis() - lastTimePressed < 500)
+      {
+        return;
+      }
+      if (current_screen == Screen::SPOTIFY)
+      {
+        on_rotary_clicked();
+      }
     }
-    Serial.print("button pressed ");
-  }
-}
-
-void setup()
-{
-  Serial.begin(115200);
-
-  // Connect to Wi-Fi
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-  }
-  client.setCACert(spotify_server_cert);
-  if (!SPIFFS.begin(true))
-  {
-    Serial.println("SPIFFS initialisation failed!");
-    while (1)
-      yield(); // Stay here twiddling thumbs waiting
-  }
-  // Start LVGL
-  lv_init();
-  init_colors();
-  // Create a display object
-  lv_display_t *disp;
-  disp = lv_tft_espi_create(ScreenConfig::WIDTH, ScreenConfig::HEIGHT, draw_buf, sizeof(draw_buf));
-  lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_270);
-  lv_theme_t *theme = lv_theme_default_init(disp, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_RED), true, LV_FONT_DEFAULT);
-  lv_disp_set_theme(disp, theme);
-  lv_create_global_styles();
-
-  create_weather_screen();
-  create_screen_clock();
-  create_calendar_screen();
-  create_loading_screen();
-  create_spotify_screen();
-  pinMode(BUTTON_PIN_NEXT, INPUT_PULLUP);
-  pinMode(BUTTON_PIN_PREV, INPUT_PULLUP);
-
-  lv_scr_load(loading_screen);
-
-  // Initialize fetchTime so loading screen shows for a while
-  fetchTime = millis() + LOADING_SCREEN_DURATION; // Show loading screen for 10 seconds
-
-  // we must initialize rotary encoder
-  rotaryEncoder.begin();
-  rotaryEncoder.setup(readEncoderISR);
-
-  rotaryEncoder.setBoundaries(-5000000, 5000000, true);
-  rotaryEncoder.setEncoderValue(lastEncoderValue);
-
-  rotaryEncoder.disableAcceleration();
-}
-
-void loop()
-{
-  lv_task_handler(); // let the GUI do its work
-  lv_tick_inc(5);    // tell LVGL how much time has passed
-  delay(5);          // let this time pass
-  timer_cb();
-
-  yield(); // Let system tasks run after LVGL operations
-
-  if (current_screen == Screen::SPOTIFY)
-  {
-    delayBetweenRequests = 5000; // Update every 5 seconds when on Spotify screen
-  }
-  else
-  {
-    delayBetweenRequests = 500000; // Update every 500 seconds when not on Spotify screen
   }
 
-  unsigned long msec = millis();
-  if (msec >= fetchTime)
+  void setup()
   {
-    fetchTime += WEATHER_UPDATE_INTERVAL;
+    Serial.begin(115200);
 
-    get_current_time_and_weather();
-    yield(); // Let system tasks run between HTTP requests
-
-    get_calendar();
-    yield(); // Let system tasks run after HTTP requests
-
-    if (isFirstBoot)
+    // Connect to Wi-Fi
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    while (WiFi.status() != WL_CONNECTED)
     {
-      lv_screen_load(*(screen_map.find(current_screen)->second));
-      isFirstBoot = false;
+      delay(500);
     }
+    // client.setCACert(spotify_server_cert);
+    client.setInsecure(); // Not secure, but works for now
+    // Start LVGL
+    lv_init();
+    init_colors();
+    // Create a display object
+    lv_display_t *disp;
+    disp = lv_tft_espi_create(ScreenConfig::WIDTH, ScreenConfig::HEIGHT, draw_buf, sizeof(draw_buf));
+    lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_270);
+    lv_theme_t *theme = lv_theme_default_init(disp, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_RED), true, LV_FONT_DEFAULT);
+    lv_disp_set_theme(disp, theme);
+    lv_create_global_styles();
 
-    Serial.println("Getting updated information");
+    create_weather_screen();
+    create_screen_clock();
+    create_calendar_screen();
+    create_loading_screen();
+    create_spotify_screen();
+    pinMode(BUTTON_PIN_NEXT, INPUT_PULLUP);
+    pinMode(BUTTON_PIN_PREV, INPUT_PULLUP);
+
+    lv_scr_load(loading_screen);
+
+    // Initialize fetchTime so loading screen shows for a while
+    fetchTime = millis() + LOADING_SCREEN_DURATION; // Show loading screen for 10 seconds
+
+    // we must initialize rotary encoder
+    rotaryEncoder.begin();
+    rotaryEncoder.setup(readEncoderISR);
+
+    rotaryEncoder.setBoundaries(-5000000, 5000000, true);
+    rotaryEncoder.setEncoderValue(lastEncoderValue);
+
+    rotaryEncoder.disableAcceleration();
   }
 
-  nextButtonCurrentState = digitalRead(BUTTON_PIN_NEXT);
-  prevButtonCurrentState = digitalRead(BUTTON_PIN_PREV);
-
-  if (nextButtonPrevState == HIGH && nextButtonCurrentState == LOW)
-    change_screens(1);
-  if (prevButtonPrevState == HIGH && prevButtonCurrentState == LOW)
-    change_screens(-1);
-
-  nextButtonPrevState = nextButtonCurrentState;
-  prevButtonPrevState = prevButtonCurrentState;
-
-  if (!isFirstBoot)
+  void loop()
   {
-    yield(); // Let system tasks run before mic processing
-    read_mic();
-  }
-  if (millis() > requestDueTime)
-  {
-    int status = spotify.getCurrentlyPlaying(show_currently_playing);
-    if (status == 200)
+    lv_task_handler(); // let the GUI do its work
+    lv_tick_inc(5);    // tell LVGL how much time has passed
+    delay(5);          // let this time pass
+    timer_cb();
+
+    yield(); // Let system tasks run after LVGL operations
+
+    if (current_screen == Screen::SPOTIFY)
     {
-      // all good
-    }
-    else if (status == 204)
-    {
-      show_empty_spotify_screen();
+      delayBetweenRequests = 5000; // Update every 5 seconds when on Spotify screen
     }
     else
     {
-      Serial.print("Error: ");
-      Serial.println(status);
+      delayBetweenRequests = 500000; // Update every 500 seconds when not on Spotify screen
     }
-    requestDueTime = millis() + delayBetweenRequests;
+
+    unsigned long msec = millis();
+    if (msec >= fetchTime)
+    {
+      fetchTime += WEATHER_UPDATE_INTERVAL;
+
+      get_current_time_and_weather();
+      yield(); // Let system tasks run between HTTP requests
+
+      get_calendar();
+      yield(); // Let system tasks run after HTTP requests
+
+      if (isFirstBoot)
+      {
+        lv_screen_load(*(screen_map.find(current_screen)->second));
+        isFirstBoot = false;
+      }
+
+      Serial.println("Getting updated information");
+    }
+
+    nextButtonCurrentState = digitalRead(BUTTON_PIN_NEXT);
+    prevButtonCurrentState = digitalRead(BUTTON_PIN_PREV);
+
+    if (nextButtonPrevState == HIGH && nextButtonCurrentState == LOW)
+      change_screens(1);
+    if (prevButtonPrevState == HIGH && prevButtonCurrentState == LOW)
+      change_screens(-1);
+
+    nextButtonPrevState = nextButtonCurrentState;
+    prevButtonPrevState = prevButtonCurrentState;
+
+    if (!isFirstBoot)
+    {
+      yield(); // Let system tasks run before mic processing
+      read_mic();
+    }
+    if (millis() > requestDueTime)
+    {
+      int status = spotify.getCurrentlyPlaying(show_currently_playing);
+      if (status == 200)
+      {
+        // all good
+      }
+      else if (status == 204)
+      {
+        show_empty_spotify_screen();
+      }
+      else
+      {
+        Serial.print("Error: ");
+        Serial.println(status);
+      }
+      requestDueTime = millis() + delayBetweenRequests;
+    }
+
+    yield(); // Let system tasks run before reading rotary encoder
+    rotary_loop();
+    delay(50); // or do whatever you need to do...
+
+    yield(); // Final yield at end of loop
   }
-
-  yield(); // Let system tasks run before reading rotary encoder
-  rotary_loop();
-  delay(50); // or do whatever you need to do...
-
-  yield(); // Final yield at end of loop
-}

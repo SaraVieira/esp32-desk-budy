@@ -7,5 +7,6 @@
 void show_currently_playing(CurrentlyPlaying currentlyPlaying);
 void show_empty_spotify_screen();
 void create_spotify_screen();
+void on_rotary_clicked();
 
 #endif // SPOTIFY_H

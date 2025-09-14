@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "styles/styles.h"
+#include "secrets.h"
 
 extern lv_obj_t *calendar_screen;
 
@@ -45,7 +46,7 @@ void get_calendar()
         HTTPClient http;
         http.setConnectTimeout(50000000);
         http.setTimeout(50000);
-        String url = String("https://deskbuddy.deploy.iamsaravieira.com/events-test");
+        String url = String(EVENTS_URL);
         http.begin(url);
         int httpCode = http.GET();
 

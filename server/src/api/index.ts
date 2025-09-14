@@ -1,15 +1,16 @@
 import express from "express"
 
-import type { MessageResponseEvents, MessageResponseIndex, MessageResponseNews } from "../interfaces/message-response.js"
+import type { MessageResponseEvents, MessageResponseIndex, MessageResponseNews, SpotifyPlayerRsp } from "../interfaces/message-response.js"
 
 import { getEvents } from "../lib/calendar.js"
 import { getDateAndTime } from "../lib/current.js"
 import { getNews } from "../lib/news.js"
+import { getSpotifyPlayer, nextSpotify, pauseSpotify, playSpotify, prevSpotify } from "../lib/spotify.js"
 import { getWeather } from "../lib/weather.js"
 
 const router = express.Router()
 
-router.get<object, MessageResponseIndex>("/", async (req, res) => {
+router.get<object, MessageResponseIndex>("/", async (_, res) => {
   const weather = await getWeather()
   const current = getDateAndTime()
 
@@ -19,7 +20,7 @@ router.get<object, MessageResponseIndex>("/", async (req, res) => {
   })
 })
 
-router.get<object, MessageResponseEvents>("/events", async (req, res) => {
+router.get<object, MessageResponseEvents>("/events", async (_, res) => {
   const events = await getEvents()
 
   res.json({
@@ -27,12 +28,49 @@ router.get<object, MessageResponseEvents>("/events", async (req, res) => {
   })
 })
 
-router.get<object, MessageResponseNews>("/news", async (req, res) => {
+router.get<object, MessageResponseNews>("/news", async (_, res) => {
   const news = await getNews()
 
   res.json({
     news,
   })
+})
+
+router.get<object, SpotifyPlayerRsp>("/spotify/status", async (_, res) => {
+  const status = await getSpotifyPlayer()
+  res.json(status)
+})
+
+router.get<object, SpotifyPlayerRsp>("/spotify/play", async (_, res) => {
+  await playSpotify()
+
+  const status = await getSpotifyPlayer()
+
+  res.json(status)
+})
+
+router.get<object, SpotifyPlayerRsp>("/spotify/pause", async (_, res) => {
+  await pauseSpotify()
+
+  const status = await getSpotifyPlayer()
+
+  res.json(status)
+})
+
+router.get<object, SpotifyPlayerRsp>("/spotify/next", async (_, res) => {
+  await nextSpotify()
+
+  const status = await getSpotifyPlayer()
+
+  res.json(status)
+})
+
+router.get<object, SpotifyPlayerRsp>("/spotify/prev", async (req, res) => {
+  await prevSpotify()
+
+  const status = await getSpotifyPlayer()
+
+  res.json(status)
 })
 
 router.get<object, MessageResponseEvents>("/events-test", async (req, res) => {

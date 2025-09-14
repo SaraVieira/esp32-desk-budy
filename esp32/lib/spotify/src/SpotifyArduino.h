@@ -26,13 +26,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 // NOTE: Do not use this option on live-streams, it will reveal your
 // private tokens!
 
-// #define SPOTIFY_DEBUG 0
+#define SPOTIFY_DEBUG 1
 
 // Comment out if you want to disable any serial output from this library (also comment out DEBUG and PRINT_JSON_PARSE)
 // #define SPOTIFY_SERIAL_OUTPUT 0
 
 // Prints the JSON received to serial (only use for debugging as it will be slow)
-// #define SPOTIFY_PRINT_JSON_PARSE 1
+#define SPOTIFY_PRINT_JSON_PARSE 1
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
