@@ -39,6 +39,8 @@ void read_mic()
     static lv_obj_t *loud_container = NULL;
     static Screen previous_screen; // Store the screen we were on
 
+    Serial.print(">sin:");
+    Serial.println(peakToPeak);
     if (peakToPeak > LOUD_THRESHOLD)
     {
         if (loud_container != NULL)
