@@ -4,7 +4,7 @@ exports.getWeather = getWeather;
 const wmocodes_js_1 = require("./wmocodes.js");
 async function getWeather() {
     const WEATHER_API_LINK = "https://api.open-meteo.com/v1/forecast?latitude=51.5085&longitude=-0.1257&daily=temperature_2m_max,temperature_2m_min,weather_code&models=ukmo_seamless&current=temperature_2m,is_day,apparent_temperature,rain,weather_code&timezone=auto&forecast_days=1";
-    const data = await fetch(WEATHER_API_LINK).then((rsp) => rsp.json());
+    const data = await fetch(WEATHER_API_LINK).then(rsp => rsp.json());
     return {
         tomorrow: {
             temperatureMax: data.daily.temperature_2m_max[0] + data.daily_units.temperature_2m_max,

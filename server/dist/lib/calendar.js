@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEvents = getEvents;
 const date_fns_1 = require("date-fns");
 const isToday_1 = require("date-fns/isToday");
-const lodash_es_1 = require("lodash-es");
 const node_ical_1 = require("node-ical");
 function getDaysArray(start, end) {
     const arr = [];
@@ -21,15 +20,21 @@ function commonParsing(event) {
         startTime: event.start.toISOString().split("T")[1],
         endTime: event.end ? (0, date_fns_1.getTime)(new Date(event.end)) : "",
         allDay: (0, date_fns_1.differenceInDays)(event.end, event.start) > 1,
-        dates: [...event.recurrences ? Object.keys(event.recurrences).map(key => new Date(key).toISOString()) : [], ...getDaysArray(event.start.toISOString(), event.end ? event.end.toISOString() : event.start.toISOString())],
+        dates: [
+            ...(event.recurrences
+                ? Object.keys(event.recurrences).map(key => new Date(key).toISOString())
+                : []),
+            ...getDaysArray(event.start.toISOString(), event.end ? event.end.toISOString() : event.start.toISOString()),
+        ],
     };
 }
 function todayEvents(events) {
     return events
         .filter(event => event.dates.some((date) => (0, isToday_1.isToday)(date)))
-        .map(event => ({
-        ...(0, lodash_es_1.omit)(event, ["dates"]),
-    }));
+        .map((event) => {
+        delete event.dates;
+        return event;
+    });
 }
 async function getOutlookEvents(c) {
     const outlook = await fetch(c.url).then(rsp => rsp.text());
@@ -63,12 +68,17 @@ async function getEvents() {
     const gmailEvents = (await Promise.all((calendars.filter(calendar => calendar.provider === "google") || []).map(async (calendar) => getGmailEvents(calendar)))).flat();
     const outlookEvents = (await Promise.all((calendars.filter(calendar => calendar.provider === "outlook") || []).map(async (calendar) => getOutlookEvents(calendar)))).flat();
     // .filter(e => isAfter(new Date(e.end), new Date()))
-    return [...gmailEvents, ...outlookEvents].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).map(event => ({
+    return [...gmailEvents, ...outlookEvents]
+        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+        .map(event => ({
         ...event,
         summary: stripEmojis(event.summary).slice(0, 16),
         startTime: event.start ? (0, date_fns_1.format)(new Date(event.start), "HH:mm") : null,
         endTime: event.end ? (0, date_fns_1.format)(new Date(event.end), "HH:mm") : null,
-        duration: event.end ? (0, date_fns_1.formatDistanceStrict)(new Date(event.end), new Date(event.start)) : null,
-    })).slice(0, 5);
+        duration: event.end
+            ? (0, date_fns_1.formatDistanceStrict)(new Date(event.end), new Date(event.start))
+            : null,
+    }))
+        .slice(0, 5);
 }
 //# sourceMappingURL=calendar.js.map
