@@ -279,4 +279,4 @@ export const WMO_CODES = {
       image: "http://openweathermap.org/img/wn/11n@2x.png",
     },
   },
-};
+}

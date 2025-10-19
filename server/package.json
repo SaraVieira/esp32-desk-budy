@@ -28,7 +28,6 @@
     "emoji-regex": "^10.4.0",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
-    "lodash-es": "^4.17.21",
     "morgan": "^1.10.0",
     "node-ical": "^0.20.1",
     "rss-to-json": "^2.1.1",

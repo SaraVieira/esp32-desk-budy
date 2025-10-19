@@ -1,15 +1,15 @@
-import type { MessageResponseIndex } from "../interfaces/message-response.js";
+import type { MessageResponseIndex } from "../interfaces/message-response.js"
 
-import { WMO_CODES } from "./wmocodes.js";
+import { WMO_CODES } from "./wmocodes.js"
 
 // Type for WMO_CODES keys
-type WMOCodeKey = keyof typeof WMO_CODES;
+type WMOCodeKey = keyof typeof WMO_CODES
 
 export async function getWeather(): Promise<MessageResponseIndex["weather"]> {
-  const WEATHER_API_LINK =
-    "https://api.open-meteo.com/v1/forecast?latitude=51.5085&longitude=-0.1257&daily=temperature_2m_max,temperature_2m_min,weather_code&models=ukmo_seamless&current=temperature_2m,is_day,apparent_temperature,rain,weather_code&timezone=auto&forecast_days=1";
+  const WEATHER_API_LINK
+    = "https://api.open-meteo.com/v1/forecast?latitude=51.5085&longitude=-0.1257&daily=temperature_2m_max,temperature_2m_min,weather_code&models=ukmo_seamless&current=temperature_2m,is_day,apparent_temperature,rain,weather_code&timezone=auto&forecast_days=1"
 
-  const data = await fetch(WEATHER_API_LINK).then((rsp) => rsp.json());
+  const data = await fetch(WEATHER_API_LINK).then(rsp => rsp.json())
 
   return {
     tomorrow: {
@@ -31,5 +31,5 @@ export async function getWeather(): Promise<MessageResponseIndex["weather"]> {
     apparentTemperature: data.current.apparent_temperature,
     rain: !!data.current.rain,
     code: data.current.weather_code,
-  };
+  }
 }
