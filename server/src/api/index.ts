@@ -2,10 +2,16 @@ import express from "express"
 
 import type { MessageResponseEvents, MessageResponseIndex, MessageResponseNews, SpotifyPlayerRsp } from "../interfaces/message-response.js"
 
-import { getEvents } from "../lib/calendar.js"
+import { getAllEvents, getEvents } from "../lib/calendar.js"
 import { getDateAndTime } from "../lib/current.js"
 import { getNews } from "../lib/news.js"
-import { getSpotifyPlayer, nextSpotify, pauseSpotify, playSpotify, prevSpotify } from "../lib/spotify.js"
+import {
+  getSpotifyPlayer,
+  nextSpotify,
+  pauseSpotify,
+  playSpotify,
+  prevSpotify,
+} from "../lib/spotify.js"
 import { getWeather } from "../lib/weather.js"
 
 const router = express.Router()
@@ -17,6 +23,14 @@ router.get<object, MessageResponseIndex>("/", async (_, res) => {
   res.json({
     current,
     weather,
+  })
+})
+
+router.get<object, MessageResponseEvents>("/events/all", async (_, res) => {
+  const events = await getAllEvents()
+
+  res.json({
+    events,
   })
 })
 
