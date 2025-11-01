@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getAllEvents = getAllEvents;
 exports.getEvents = getEvents;
 const date_fns_1 = require("date-fns");
 const isToday_1 = require("date-fns/isToday");
@@ -28,6 +29,14 @@ function commonParsing(event) {
         ],
     };
 }
+function onlyFutureAndToday(events) {
+    return events
+        .filter(event => (0, date_fns_1.isFuture)(new Date(event.start)) || (0, isToday_1.isToday)(new Date(event.start)))
+        .map((event) => {
+        delete event.dates;
+        return event;
+    });
+}
 function todayEvents(events) {
     return events
         .filter(event => event.dates.some((date) => (0, isToday_1.isToday)(date)))
@@ -36,10 +45,20 @@ function todayEvents(events) {
         return event;
     });
 }
-async function getOutlookEvents(c) {
+async function getOutlookEvents(c, onlyToday = true) {
     const outlook = await fetch(c.url).then(rsp => rsp.text());
     const ical = node_ical_1.sync.parseICS(outlook);
     const allEvents = Object.values(ical).filter(event => event.type === "VEVENT");
+    if (!onlyToday) {
+        return onlyFutureAndToday(allEvents
+            .map(event => ({
+            ...commonParsing(event),
+            // @ts-expect-error exists on outlook
+            allDay: event["MICROSOFT-CDO-ALLDAYEVENT"].toLowerCase() === "true",
+            calendar_type: c.type,
+        }))
+            .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()));
+    }
     return todayEvents(allEvents.map(event => ({
         ...commonParsing(event),
         // @ts-expect-error exists on outlook
@@ -47,10 +66,19 @@ async function getOutlookEvents(c) {
         calendar_type: c.type,
     })));
 }
-async function getGmailEvents(c) {
+async function getGmailEvents(c, onlyToday = true) {
     const calendar = await fetch(c.url).then(rsp => rsp.text());
     const ical = node_ical_1.sync.parseICS(calendar);
     const allEvents = Object.values(ical).filter(event => event.type === "VEVENT") || [];
+    if (!onlyToday) {
+        return onlyFutureAndToday(allEvents
+            .map(event => ({
+            ...commonParsing(event),
+            allDay: (0, date_fns_1.differenceInDays)(event.end, event.start) > 1,
+            calendar_type: c.type,
+        }))
+            .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()));
+    }
     return todayEvents(allEvents.map(event => ({
         ...commonParsing(event),
         allDay: (0, date_fns_1.differenceInDays)(event.end, event.start) > 1,
@@ -58,10 +86,28 @@ async function getGmailEvents(c) {
     })));
 }
 function stripEmojis(str) {
+    if (!str)
+        return str;
     return str
         .replace(/([\u2700-\u27BF\uE000-\uF8FF\u2011-\u26FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDD10-\uDDFF])/g, "")
         .replace(/\s+/g, " ")
         .trim();
+}
+async function getAllEvents() {
+    const calendars = JSON.parse(process.env.CALENDARS || "[]");
+    const gmailEvents = (await Promise.all((calendars.filter(calendar => calendar.provider === "google") || []).map(async (calendar) => getGmailEvents(calendar, false)))).flat();
+    const outlookEvents = (await Promise.all((calendars.filter(calendar => calendar.provider === "outlook") || []).map(async (calendar) => getOutlookEvents(calendar, false)))).flat();
+    return [...gmailEvents, ...outlookEvents]
+        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+        .map(event => ({
+        ...event,
+        summary: stripEmojis(event.summary).slice(0, 16),
+        startTime: event.start ? (0, date_fns_1.format)(new Date(event.start), "HH:mm") : null,
+        endTime: event.end ? (0, date_fns_1.format)(new Date(event.end), "HH:mm") : null,
+        duration: event.end
+            ? (0, date_fns_1.formatDistanceStrict)(new Date(event.end), new Date(event.start))
+            : null,
+    }));
 }
 async function getEvents() {
     const calendars = JSON.parse(process.env.CALENDARS || "[]");

@@ -18,6 +18,12 @@ router.get("/", async (_, res) => {
         weather,
     });
 });
+router.get("/events/all", async (_, res) => {
+    const events = await (0, calendar_js_1.getAllEvents)();
+    res.json({
+        events,
+    });
+});
 router.get("/events", async (_, res) => {
     const events = await (0, calendar_js_1.getEvents)();
     res.json({
