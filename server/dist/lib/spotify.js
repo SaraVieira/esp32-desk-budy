@@ -28,6 +28,7 @@ async function getSpotifyPlayer() {
             },
         }).then(rsp => rsp.json()).then((data) => {
             return {
+                ...data,
                 device: data.device,
                 is_playing: data.is_playing,
                 progress_ms: data.progress_ms,

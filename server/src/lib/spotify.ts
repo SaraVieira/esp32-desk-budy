@@ -22,6 +22,7 @@ export async function getSpotifyPlayer() {
       },
     }).then(rsp => rsp.json()).then((data) => {
       return {
+        ...data,
         device: data.device,
         is_playing: data.is_playing,
         progress_ms: data.progress_ms,
@@ -29,6 +30,7 @@ export async function getSpotifyPlayer() {
         artists: data.item.artists.map((artist: { name: string }) => artist.name).join(", "),
         song: data.item.name,
         percentage: data.progress_ms && data.item.duration_ms ? Math.round((data.progress_ms / data.item.duration_ms) * 100) : 0,
+
       }
     }).catch(() => {
       return { closed: true }
